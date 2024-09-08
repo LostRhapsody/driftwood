@@ -1,0 +1,50 @@
+[package]
+name = "driftwood"
+version = "0.1.0"
+description = "A blog-creating tool"
+authors = ["Evan Robertson"]
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "1", features = [] }
+
+[dependencies]
+tauri = { version = "1", features = [] }
+devtools = "0.3.3"
+# convert html to markdown
+pulldown-cmark = "0.12.0"
+# get dates and times
+chrono = "0.4.38"
+# make easy HTTP requests
+reqwest = { version = "0.12.7", features = ["blocking", "json"] }
+# async runtime
+tokio = { version = "1.40.0", features = ["full"] }
+# deal with JSON
+serde = { version = "1.0.209", features = ["derive"] }
+serde_json = "1.0.127"
+# create SHA1 for files
+sha1_smol = "1.0.1"
+# template engine
+tinytemplate = "1.1"
+# gotta have regex
+regex = "1"
+# OAuth2.0
+oauth2 = "4.4.2"
+# Access .env file
+dotenv = "0.15"
+# For some fun error handling
+anyhow = "1.0"
+# For git repo
+git2 = "0.19.0"
+# For RSA encryption
+rsa = { version = "0.9.6", features = ["pem"] }
+rand = "0.8.5"
+base64 = "0.22.1"
+# For opening a browser
+webbrowser = "1.0.1"
+# For URL encoding
+urlencoding = "2.1.3"
+
+[features]
+# This feature is used for production builds or when a dev server is not specified, DO NOT REMOVE!!
+custom-protocol = ["tauri/custom-protocol"]
