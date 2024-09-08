@@ -1,20 +1,41 @@
 "use client";
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Button } from "@/components/ui/button";
-import { CircleArrowLeft } from "lucide-react";
-export default function sites() {
+import { useState, useEffect } from 'react';
+import { invoke } from "@tauri-apps/api/tauri";
+
+export default function Sites() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadSites = async () => {
+      try {
+        const response = await invoke<string>("list_sites");
+        const sites_elemnt = document.getElementById('sites');
+        if (sites_elemnt) {
+          sites_elemnt.innerHTML = response;
+        }
+      } catch (err) {
+        setError('Failed to load sites');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSites();
+  }, []);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+
   return (
-    <div className="grid grid-rows items-center justify-items-center min-h-screen gap-16 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 items-center">
-        <a href="/">
-          <Button variant="outline" className="flex flex-row gap-2">
-            <CircleArrowLeft />
-            Go back home
-          </Button>
-        </a>
-        <h1 className="text-7xl">Your sites</h1>
-      </main>
+    <div>
+      <h1 className="text-2xl underline">Your sites</h1>
+      <div className="overflow-auto max-h-[50vh] w-full">
+        <div id="sites" className="grid grid-cols-3 gap-4 w-full object-cover">
+        </div>
+      </div>
     </div>
   );
 }

@@ -90,3 +90,39 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+.card {
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  box-shadow:
+      0 4px 6px rgba(0, 0, 0, 0.1),
+      0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  margin-bottom: 2em;
+  display: flex;
+  flex-direction: column;
+  padding: 1em;
+  align-items: center;
+}
+
+.card a {
+  text-decoration: none;
+  color: var(--text-color);
+  font-weight: bold;
+  font-size: 1.2em;
+  margin-bottom: 1em;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow:
+      0 7px 14px rgba(0, 0, 0, 0.15),
+      0 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card__image {
+  object-fit: cover;
+  height: 200px;
+  width: auto;
+  border-radius: 8px;
+}

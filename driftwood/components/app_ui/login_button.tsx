@@ -26,9 +26,8 @@ const LoginButton: React.FC<LoginButtonProps> = ({
 
   return (
     <div className="flex flex-row gap-8">
-      <Button onClick={handleLogin} className="w-40 h-40 flex flex-col gap-4">
-        <LogIn size={64} />
-        Log In
+      <Button onClick={handleLogin} className="flex flex-row gap-4">
+        <LogIn/> Log In
       </Button>
     </div>
   );
