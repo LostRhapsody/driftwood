@@ -13,6 +13,7 @@ struct SiteCardContext {
 
 #[tauri::command]
 pub fn netlify_login() -> bool {
+    println!("Logging in");
     let netlify = Netlify::new();
     match netlify {
         Ok(_) => true,
@@ -22,6 +23,7 @@ pub fn netlify_login() -> bool {
 
 #[tauri::command]
 pub fn check_token() -> bool {
+    println!("Checking token");
     let token_file = Path::new("netlify_token.json");
     match token_file.exists() {
         true => true,
@@ -31,6 +33,9 @@ pub fn check_token() -> bool {
 
 #[tauri::command]
 pub fn list_sites() -> String {
+
+    println!("Listing sites");
+
     static SITE_CARD_TEMPLATE: &'static str =
         include_str!("templates/default/site-card-template.html");
     let mut tt_site_card = TinyTemplate::new();
@@ -38,13 +43,16 @@ pub fn list_sites() -> String {
 
     match tt_site_card.add_template("site", SITE_CARD_TEMPLATE) {
         Ok(()) => (),
-        Err(_) => return String::new(),
+        Err(_) => return String::from("Failed to add template"),
     }
+
+    println!("Added template");
 
     let mut rendered_site_cards = String::new();
 
     match Netlify::new() {
         Ok(netlify) => {
+            println!("Netlify instance created");
             let site_details: Vec<SiteDetails> = get_sites(netlify);
             for site in site_details {
                 let site_name = site.name.unwrap();
@@ -60,6 +68,7 @@ pub fn list_sites() -> String {
                         .expect("Failed templating the site card links"),
                 );
             }
+            println!("sites: {}", rendered_site_cards);
             rendered_site_cards
         }
         Err(e) => {

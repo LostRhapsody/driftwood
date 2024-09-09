@@ -11,6 +11,11 @@ export default function Sites() {
     const loadSites = async () => {
       try {
         const response = await invoke<string>("list_sites");
+        console.log("Sites response:", response);
+        if (!response || response === '') {
+          setError('No sites found');
+          return;
+        }
         const sites_elemnt = document.getElementById('sites');
         if (sites_elemnt) {
           sites_elemnt.innerHTML = response;
@@ -33,7 +38,7 @@ export default function Sites() {
     <div>
       <h1 className="text-2xl underline">Your sites</h1>
       <div className="overflow-auto max-h-[50vh] w-full">
-        <div id="sites" className="grid grid-cols-3 gap-4 w-full object-cover">
+        <div id="sites" className="grid grid-cols-3 gap-4 w-full object-cover justify-center">
         </div>
       </div>
     </div>
