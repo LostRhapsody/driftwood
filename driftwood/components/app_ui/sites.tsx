@@ -37,7 +37,7 @@ export default function Sites() {
   return (
     <div className="">
       <h1 className="text-2xl underline">Your sites</h1>
-        <div id="sites" className="grid grid-cols-3 gap-8">
+        <div id="sites" className="w-full flex flex-wrap gap-8 justify-center">
         </div>
     </div>
   );
