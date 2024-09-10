@@ -9,6 +9,7 @@ use dotenv::dotenv;
 use crate::commands::{
     list_sites,
     netlify_login,
+    netlify_logout,
     check_token,
 };
 
@@ -18,6 +19,7 @@ fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             netlify_login,
+            netlify_logout,
             list_sites,
             check_token,
         ])

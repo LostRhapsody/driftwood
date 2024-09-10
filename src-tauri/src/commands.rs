@@ -22,6 +22,21 @@ pub fn netlify_login() -> bool {
 }
 
 #[tauri::command]
+pub fn netlify_logout() -> bool {
+    println!("Logging out");
+    let token_file = Path::new("netlify_token.json");
+    match token_file.exists() {
+        true => {
+            match std::fs::remove_file(token_file) {
+                Ok(_) => true,
+                Err(_) => false,
+            }
+        }
+        false => false,
+    }
+}
+
+#[tauri::command]
 pub fn check_token() -> bool {
     println!("Checking token");
     let token_file = Path::new("netlify_token.json");

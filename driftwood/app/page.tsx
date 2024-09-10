@@ -6,10 +6,11 @@ import LoginButton from "@/components/app_ui/login_button";
 import { Button } from "@/components/ui/button";
 import { invoke } from "@tauri-apps/api/tauri";
 import Link from "next/link";
-import Footer from "@/components/app_ui/footer";
 import Sites from "@/components/app_ui/sites";
-import { AlignLeft, Globe } from "lucide-react";
+import { AlignLeft, Globe, House, Bug, LogOut } from "lucide-react";
+
 export default function Home() {
+
   const [hasToken, setHasToken] = useState(true);
   const [currentPage, setCurrentPage] = useState("home");
 
@@ -17,27 +18,23 @@ export default function Home() {
     switch (currentPage) {
       case "home":
         return (
-          <div className="text-center">
-            <h1 className="text-5xl font-extrabold pb-4">Driftwood</h1>
-            <div className="flex flex-row gap-8 justify-center">
-              <Button
-                id="create_site"
-                className="w-40 h-40 flex flex-col gap-4"
-                onClick={() => handleNavigation("create_site")}
-              >
-                <Globe size={64} />
-                <p>Create new site</p>
-              </Button>
-              <Button
-                id="create_site"
-                className="w-40 h-40 flex flex-col gap-4"
-                onClick={() => handleNavigation("sites")}
-              >
-                <AlignLeft size={64} />
-                <p>List your sites</p>
-              </Button>
-            </div>
-
+          <div className="flex gap-8 justify-center items-center w-full">
+            <Button
+              id="create_site"
+              className="w-40 h-40 flex flex-col gap-4"
+              onClick={() => handleNavigation("create_site")}
+            >
+              <Globe size={64} />
+              <p>Create new site</p>
+            </Button>
+            <Button
+              id="create_site"
+              className="w-40 h-40 flex flex-col gap-4"
+              onClick={() => handleNavigation("sites")}
+            >
+              <AlignLeft size={64} />
+              <p>List your sites</p>
+            </Button>
           </div>
         );
       case "sites":
@@ -61,7 +58,15 @@ export default function Home() {
     setHasToken(false);
   };
 
-  // TODO finish implementing and testing this
+  const handleLogout = async () => {
+    try {
+      await invoke("netlify_logout");
+      setHasToken(false);
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
   useEffect(() => {
     const checkToken = async () => {
       try {
@@ -76,44 +81,43 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col justify-between font-[family-name:var(--font-geist-sans)]">
-      <header>
-        <nav className="flex flex-row gap-8 p-4">
+    <div className="min-h-screen font-[family-name:var(--font-geist-sans)]">
+      <div className="flex relative">
+        <header className="flex flex-col gap-6 p-2 fixed overflow-y-auto z-10 bg-zinc-800 h-[100vh]">
             {!hasToken ? (
               <LoginButton
                 onLoginSuccess={handleLoginSuccess}
                 onLoginFailure={handleLoginFailure}
               />
             ) : (
-              <Button className="text-xl p-6">
-                <p>Logout</p>
+              <Button onClick={handleLogout} className="p-6">
+                <LogOut />
               </Button>
             )}
           <Button
             className="text-xl p-6"
             onClick={() => handleNavigation("home")}
           >
-            Home
+            <House />
           </Button>
           <Link href="404">
-            <Button className="text-xl p-6">404</Button>
+            <Button className="text-xl p-6 w-full"><Bug /></Button>
           </Link>
-        </nav>
-      </header>
-      <main className="flex flex-col gap-8 align-top rounded-xl">
-        {!hasToken ? (
-          <div className="text-center">
-            <h1 className="text-7xl">Driftwood</h1>
-            <p className="text-xl">Static blog generator</p>
-            <p className="text-xl">
-              Please log in to Netlify to continue (top left)
-            </p>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-8">{renderContent()}</div>
-        )}
-      </main>
-      <Footer />
+        </header>
+        <main className="ml-[5.5rem] h-[100vh] gap-8 flex flex-row p-8 w-full">
+          {!hasToken ? (
+            <div className="w-full flex flex-col justify-center items-center">
+              <h1 className="text-7xl">Driftwood</h1>
+              <p className="text-xl">Static blog generator</p>
+              <p className="text-xl">
+                Please log in to Netlify to continue (top left)
+              </p>
+            </div>
+          ) : (
+            <>{renderContent()}</>
+          )}
+        </main>
+      </div>
     </div>
   );
 }

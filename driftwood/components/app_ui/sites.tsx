@@ -35,12 +35,10 @@ export default function Sites() {
   if (error) return <div>Error: {error}</div>;
 
   return (
-    <div>
+    <div className="">
       <h1 className="text-2xl underline">Your sites</h1>
-      <div className="overflow-auto max-h-[50vh] w-full">
-        <div id="sites" className="grid grid-cols-3 gap-4 w-full object-cover justify-center">
+        <div id="sites" className="grid grid-cols-3 gap-8">
         </div>
-      </div>
     </div>
   );
 }
