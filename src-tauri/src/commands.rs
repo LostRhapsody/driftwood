@@ -1,5 +1,6 @@
+// TODO: Pass site details to create new site API call in Netlify
 use crate::netlify::Netlify;
-use serde::Serialize;
+use serde::{Serialize,Deserialize};
 use tinytemplate::{format_unescaped, TinyTemplate};
 use driftwood::SiteDetails;
 use std::path::Path;
@@ -12,7 +13,8 @@ struct SiteCardContext {
     siteid: String,
 }
 
-struct NewSite {
+#[derive(Deserialize)]
+pub struct NewSite {
     site_name: String,
     custom_domain: String,
     favicon_file: String,
@@ -58,9 +60,13 @@ pub fn check_token() -> bool {
 }
 
 #[tauri::command]
-pub fn create_site() -> String {
+pub fn create_site(new_site: &str) -> String {
+
     println!("Creating a site");
-    String::new()
+    println!("new site args: {}", new_site);
+    let site: NewSite = serde_json::from_str(new_site).unwrap();
+    println!("Site name: {}", site.site_name);
+    format!("This is the new site: {}", site.site_name)
 }
 
 #[tauri::command]

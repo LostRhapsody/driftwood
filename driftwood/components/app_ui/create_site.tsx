@@ -1,11 +1,9 @@
 "use client";
-// TODO - switch from switches to checkbox for form
-// also finish the form
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { invoke } from "@tauri-apps/api/tauri";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -47,6 +45,7 @@ const formSchema = z.object({
 });
 
 export default function CreateSite() {
+
   // 1. Define your form.
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -61,11 +60,34 @@ export default function CreateSite() {
     },
   });
 
+  const create_site = async (new_site: any) => {
+    console.log("creating new site");
+    const newSite = JSON.stringify(new_site);
+    console.log(newSite);
+    try {
+      console.log("trying");
+      const response = await invoke<string>("create_site",{newSite:newSite});
+      console.log("Sites response:", response);
+      if (!response || response === '') {
+        return;
+      }
+      const sites_elemnt = document.getElementById('sites');
+      if (sites_elemnt) {
+        sites_elemnt.innerHTML = response;
+      }
+    } catch (err) {
+      console.error("error");
+      console.error(err);
+    } finally {
+    }
+  };
+
   // 2. Define a submit handler.
   function onSubmit(values: z.infer<typeof formSchema>) {
     // Do something with the form values.
     // ✅ This will be type-safe and validated.
     console.log(values);
+    create_site(values);
     // this is the object we're expecting from the form
     // {
     //   custom_domain: "domain.com",

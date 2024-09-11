@@ -11,6 +11,7 @@ use crate::commands::{
     netlify_login,
     netlify_logout,
     check_token,
+    create_site,
 };
 
 fn main() {
@@ -22,6 +23,7 @@ fn main() {
             netlify_logout,
             list_sites,
             check_token,
+            create_site,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
