@@ -1,5 +1,4 @@
 "use client";
-
 // TODO - switch from switches to checkbox for form
 // also finish the form
 
@@ -67,13 +66,23 @@ export default function CreateSite() {
     // Do something with the form values.
     // ✅ This will be type-safe and validated.
     console.log(values);
+    // this is the object we're expecting from the form
+    // {
+    //   custom_domain: "domain.com",
+    //   favicon_file: "C:\file.ico",
+    //   github_enabled: false,
+    //   password_enabled: false,
+    //   rss_enabled: false,
+    //   site_name: "name",
+    //   tempalte: "default"
+    // }
     // site_name: needs to be unique, Netlify will handle validation.
   }
 
   return (
     <div>
       <h1 className="text-4xl pb-2">Create a new site</h1>
-      <div className="pb-10">
+      <div className="pb-10 dark">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <FormField
@@ -158,8 +167,8 @@ export default function CreateSite() {
                         >
                           {field.value
                             ? templates.find(
-                                (template) => template.value === field.value
-                              )?.label
+                              (template) => template.value === field.value
+                            )?.label
                             : "Select template"}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
@@ -213,6 +222,50 @@ export default function CreateSite() {
                     </FormLabel>
                     <FormDescription>
                       Turn this on to require visitors to use a password to enter your site.
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="rss_enabled"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">
+                      RSS enabled
+                    </FormLabel>
+                    <FormDescription>
+                      Turn this on to add an RSS feed to your website.
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="github_enabled"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">
+                      Github enabled
+                    </FormLabel>
+                    <FormDescription>
+                      Turn this on to connect your site to a Github repo.
                     </FormDescription>
                   </div>
                   <FormControl>
