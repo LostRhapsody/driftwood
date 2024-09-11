@@ -35,9 +35,9 @@ export default function Sites() {
   if (error) return <div>Error: {error}</div>;
 
   return (
-    <div className="">
-      <h1 className="text-2xl underline">Your sites</h1>
-        <div id="sites" className="w-full flex flex-wrap gap-8 justify-center">
+    <div>
+      <h1 className="text-4xl pb-2">Your sites</h1>
+        <div id="sites" className="w-full flex flex-wrap gap-8 justify-start">
         </div>
     </div>
   );

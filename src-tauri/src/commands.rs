@@ -9,6 +9,17 @@ struct SiteCardContext {
     title: String,
     image: String,
     sitename: String,
+    siteid: String,
+}
+
+struct NewSite {
+    site_name: String,
+    custom_domain: String,
+    favicon_file: String,
+    template: String,
+    password_enabled: bool,
+    rss_enabled: bool,
+    github_enabled: bool,
 }
 
 #[tauri::command]
@@ -47,6 +58,12 @@ pub fn check_token() -> bool {
 }
 
 #[tauri::command]
+pub fn create_site() -> String {
+    println!("Creating a site");
+    String::new()
+}
+
+#[tauri::command]
 pub fn list_sites() -> String {
 
     println!("Listing sites");
@@ -70,12 +87,14 @@ pub fn list_sites() -> String {
             println!("Netlify instance created");
             let site_details: Vec<SiteDetails> = get_sites(netlify);
             for site in site_details {
-                let site_name = site.name.unwrap();
+                let site_name = site.name.unwrap_or_else(|| "".to_string());
                 let site_img = site.screenshot_url.unwrap_or_else(|| "https://images.unsplash.com/photo-1615147342761-9238e15d8b96?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1001&q=80".to_string());
-                let site_card_context = SiteCardContext {
+                let site_id: String = site.id.unwrap_or_else(|| "".to_string());
+                let site_card_context: SiteCardContext = SiteCardContext {
                     title: site_name.clone(),
                     image: site_img,
                     sitename: site_name,
+                    siteid: site_id,
                 };
                 rendered_site_cards.push_str(
                     &tt_site_card
@@ -83,7 +102,6 @@ pub fn list_sites() -> String {
                         .expect("Failed templating the site card links"),
                 );
             }
-            println!("sites: {}", rendered_site_cards);
             rendered_site_cards
         }
         Err(e) => {

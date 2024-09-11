@@ -1,12 +1,16 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect } from "react";
 import React from "react";
+import { useState, useEffect } from "react";
+
+import Sites from "@/components/app_ui/sites";
+import CreateSite from "@/components/app_ui/create_site";
+
 import LoginButton from "@/components/app_ui/login_button";
 import { Button } from "@/components/ui/button";
-import { invoke } from "@tauri-apps/api/tauri";
 import Link from "next/link";
-import Sites from "@/components/app_ui/sites";
+
+import { invoke } from "@tauri-apps/api/tauri";
 import { AlignLeft, Globe, House, Bug, LogOut } from "lucide-react";
 
 export default function Home() {
@@ -20,7 +24,6 @@ export default function Home() {
         return (
           <div className="flex gap-8 justify-center items-center w-full">
             <Button
-              id="create_site"
               className="w-40 h-40 flex flex-col gap-4"
               onClick={() => handleNavigation("create_site")}
             >
@@ -28,7 +31,6 @@ export default function Home() {
               <p>Create new site</p>
             </Button>
             <Button
-              id="create_site"
               className="w-40 h-40 flex flex-col gap-4"
               onClick={() => handleNavigation("sites")}
             >
@@ -39,6 +41,8 @@ export default function Home() {
         );
       case "sites":
         return <Sites />;
+      case "create_site":
+        return <CreateSite />;
       default:
         return <div>Home sweet home default</div>;
     }
