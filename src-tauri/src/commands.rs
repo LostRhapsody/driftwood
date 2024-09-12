@@ -1,8 +1,7 @@
-// TODO: Pass site details to create new site API call in Netlify
 use crate::netlify::Netlify;
-use serde::{Serialize,Deserialize};
+use serde::Serialize;
 use tinytemplate::{format_unescaped, TinyTemplate};
-use driftwood::SiteDetails;
+use driftwood::{SiteDetails, NewSite};
 use std::path::Path;
 
 #[derive(Serialize)]
@@ -13,16 +12,6 @@ struct SiteCardContext {
     siteid: String,
 }
 
-#[derive(Deserialize)]
-pub struct NewSite {
-    site_name: String,
-    custom_domain: String,
-    favicon_file: String,
-    template: String,
-    password_enabled: bool,
-    rss_enabled: bool,
-    github_enabled: bool,
-}
 
 #[tauri::command]
 pub fn netlify_login() -> bool {
@@ -60,13 +49,18 @@ pub fn check_token() -> bool {
 }
 
 #[tauri::command]
-pub fn create_site(new_site: &str) -> String {
-
+pub fn create_site(new_site: &str) -> Result<String, String> {
     println!("Creating a site");
     println!("new site args: {}", new_site);
-    let site: NewSite = serde_json::from_str(new_site).unwrap();
-    println!("Site name: {}", site.site_name);
-    format!("This is the new site: {}", site.site_name)
+
+    let site: NewSite = serde_json::from_str(new_site).map_err(|e| e.to_string())?;
+    let netlify = Netlify::new().map_err(|e| e.to_string())?;
+
+    match netlify.create_site(site) {
+        Ok(site_details) => Ok(serde_json::to_string(&site_details).unwrap()),
+        Err(err) => Err(err.to_string()),
+    }
+
 }
 
 #[tauri::command]

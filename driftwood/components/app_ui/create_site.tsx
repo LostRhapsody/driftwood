@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useState } from 'react';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -32,8 +33,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch"
 
+// available website templates
 const templates = [{ label: "Default", value: "default" }] as const;
 
+// create site for schema
 const formSchema = z.object({
   site_name: z.string().min(1).max(37),
   custom_domain: z.string().max(253),
@@ -42,11 +45,14 @@ const formSchema = z.object({
   password_enabled: z.boolean().default(false),
   rss_enabled: z.boolean().default(false),
   github_enabled: z.boolean().default(false),
+  github_url: z.string(),
 });
 
 export default function CreateSite() {
 
-  // 1. Define your form.
+  const [github_enabled, set_github_enabled] = useState(false);
+
+  // Create site form defition
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -57,17 +63,26 @@ export default function CreateSite() {
       password_enabled: false,
       rss_enabled: false,
       github_enabled: false,
+      github_url: "",
     },
   });
 
+  // watch for github_enabled changes
+  const watchGithub = form.watch('github_enabled');
+
+  // update the github enabled state (displays the github url field)
+  useEffect(() => {
+    if (watchGithub !== github_enabled) {
+      set_github_enabled(watchGithub);
+    }
+  });
+
+  // send form data to backend
   const create_site = async (new_site: any) => {
-    console.log("creating new site");
     const newSite = JSON.stringify(new_site);
-    console.log(newSite);
     try {
-      console.log("trying");
       const response = await invoke<string>("create_site",{newSite:newSite});
-      console.log("Sites response:", response);
+      console.log(response);
       if (!response || response === '') {
         return;
       }
@@ -76,29 +91,14 @@ export default function CreateSite() {
         sites_elemnt.innerHTML = response;
       }
     } catch (err) {
-      console.error("error");
       console.error(err);
     } finally {
     }
   };
 
-  // 2. Define a submit handler.
+  // submit handler for site create form
   function onSubmit(values: z.infer<typeof formSchema>) {
-    // Do something with the form values.
-    // ✅ This will be type-safe and validated.
-    console.log(values);
     create_site(values);
-    // this is the object we're expecting from the form
-    // {
-    //   custom_domain: "domain.com",
-    //   favicon_file: "C:\file.ico",
-    //   github_enabled: false,
-    //   password_enabled: false,
-    //   rss_enabled: false,
-    //   site_name: "name",
-    //   tempalte: "default"
-    // }
-    // site_name: needs to be unique, Netlify will handle validation.
   }
 
   return (
@@ -255,7 +255,7 @@ export default function CreateSite() {
                 </FormItem>
               )}
             />
-            <FormField
+            {/* <FormField
               control={form.control}
               name="rss_enabled"
               render={({ field }) => (
@@ -276,7 +276,7 @@ export default function CreateSite() {
                   </FormControl>
                 </FormItem>
               )}
-            />
+            /> */}
             <FormField
               control={form.control}
               name="github_enabled"
@@ -299,6 +299,22 @@ export default function CreateSite() {
                 </FormItem>
               )}
             />
+            {github_enabled && (<FormField
+              control={form.control}
+              name="github_url"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Github URL</FormLabel>
+                  <FormControl>
+                    <Input placeholder="https://github.com/Me/MyRepo" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Head to github, initialize an empty repository, and add the URL here.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />)}
             <Button type="submit">Submit</Button>
           </form>
         </Form>

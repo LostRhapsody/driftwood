@@ -15,10 +15,7 @@ use std::{
     time::Duration,
 };
 use webbrowser;
-/// TODO - Create a new server host to run the authentication logic through
-/// TODO - refresh token
-///
-use driftwood::{OAuth2, SiteDetails};
+use driftwood::{OAuth2, SiteDetails, NewSite};
 
 /// Netlify struct
 /// Contains the user agent, token, and base URL for the Netlify API
@@ -156,18 +153,21 @@ impl Netlify {
     /// Returns a Result containing a vector of SiteDetails or an error
     pub fn create_site(
         &self,
-        new_site: SiteDetails,
+        new_site: NewSite,
     ) -> Result<SiteDetails, Box<dyn std::error::Error>> {
-        println!("> Creating site: {}", new_site.name.clone().unwrap());
+        println!("> Creating site: {}", new_site.site_name);
 
-        // create the url
-        let request_url = self.url.clone() + "sites";
+        let request_url = format!("{}sites", self.url);
 
-        // create the request body
-        let json = serde_json::to_value(new_site)?;
+        let json = serde_json::json!({
+            "name": new_site.site_name,
+            "custom_domain": new_site.custom_domain,
+            "password": new_site.password_enabled,
+            "force_ssl": true,
+        });
 
-        // build and send the request
         let client = self.build_client();
+
         let response = self.send_post_request(client, request_url, json);
 
         // return the response

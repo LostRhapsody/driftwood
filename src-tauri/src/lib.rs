@@ -1,11 +1,7 @@
 use anyhow::{Context, Result};
-/// TODO - Add a customizable favicon for the site
-/// TODO - Add an 'about' page
-/// TODO - Finish the Repository integration
 use git2::{Repository, Signature};
 use regex::Regex;
-use serde::Deserialize;
-use serde::Serialize;
+use serde::{Serialize,Deserialize};
 use std::{
     env,
     error::Error,
@@ -50,17 +46,30 @@ struct PostContext {
 
 /// SiteDetails struct
 /// Contains the details of a site
-/// name: The name of the site
-/// url: The URL of the site
-/// screenshot_url: The URL of the site's screenshot
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct SiteDetails {
     pub name: Option<String>,
+    pub domain: Option<String>,
     pub id: Option<String>,
     pub ssl: Option<bool>,
     pub url: Option<String>,
     pub screenshot_url: Option<String>,
     pub required: Option<Vec<String>>,
+}
+
+
+/// NewSite struct
+/// cotnains the settings and options for a new site
+#[derive(Serialize, Deserialize)]
+pub struct NewSite {
+    pub site_name: String,
+    pub custom_domain: String,
+    pub favicon_file: String,
+    pub template: String,
+    pub password_enabled: bool,
+    pub rss_enabled: bool,
+    pub github_enabled: bool,
+    pub github_url: String,
 }
 
 static POST_CARD_TEMPLATE: &'static str = include_str!("templates/default/blog-card-template.html");
