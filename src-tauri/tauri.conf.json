@@ -1,7 +1,7 @@
 {
   "build": {
-    "beforeBuildCommand": "cd ../driftwood/driftwood && npm run build",
-    "beforeDevCommand": "cd ../driftwood/driftwood && npm run dev",
+    "beforeBuildCommand": "cd ../driftwood/driftwood && bun run build",
+    "beforeDevCommand": "cd ../driftwood/driftwood && bun run dev",
     "devPath": "http://localhost:3000",
     "distDir": "../driftwood/out"
   },
