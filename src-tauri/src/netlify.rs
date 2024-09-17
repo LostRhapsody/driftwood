@@ -162,9 +162,11 @@ impl Netlify {
         let json = serde_json::json!({
             "name": new_site.site_name,
             "custom_domain": new_site.custom_domain,
-            "password": new_site.password_enabled,
+            "password": new_site.password,
             "force_ssl": true,
         });
+
+        println!("Create new site request: {:?}", json);
 
         let client = self.build_client();
 
@@ -502,23 +504,12 @@ impl Netlify {
 
         match response {
             Ok(resp) => {
-                if resp.status() == 422 {
-                    println!("> Site name provided is not unique.");
-                    println!("> Request failed with a status of 422.");
-                    println!(concat!(
-                        "> !!!Note: 422 means 'unprocessable ",
-                        "entity', but it could just be your site name is already ",
-                        "being used. Try a different, more unique name.!!!"
-                    ));
-                }
-
                 if resp.status().is_success() {
                     let json: serde_json::Value = resp.json()?;
                     let sites: SiteDetails = serde_json::from_value(json)?;
                     Ok(sites)
                 } else {
-                    println!("> Request failed: {}", resp.status());
-                    return Err(format!("> Request failed: {}", resp.status()).into());
+                    return Err(format!("> Request failed: {}", resp.text().unwrap()).into());
                 }
             }
             Err(e) => {

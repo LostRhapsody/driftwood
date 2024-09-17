@@ -53,6 +53,7 @@ const formSchema = z.object({
 	favicon_file: z.string(),
 	template: z.string().min(1),
 	password_enabled: z.boolean().default(false),
+	password: z.string(),
 	rss_enabled: z.boolean().default(false),
 	github_enabled: z.boolean().default(false),
 	github_url: z.string(),
@@ -60,6 +61,7 @@ const formSchema = z.object({
 
 export default function CreateSite() {
 	const [github_enabled, set_github_enabled] = useState(false);
+	const [password_enabled, set_password_enabled] = useState(false);
 	const [isAlertOpen, setIsAlertOpen] = useState(false);
 	const [name, setName] = useState("");
 	const { toast } = useToast();
@@ -73,14 +75,16 @@ export default function CreateSite() {
 			favicon_file: "",
 			template: "default",
 			password_enabled: false,
+			password: "",
 			rss_enabled: false,
 			github_enabled: false,
 			github_url: "",
 		},
 	});
 
-	// watch for github_enabled changes
+	// watch for github_enabled and password_enabled changes
 	const watchGithub = form.watch("github_enabled");
+	const watchPassword = form.watch("password_enabled");
 
 	// update the github enabled state (displays the github url field)
 	useEffect(() => {
@@ -88,6 +92,13 @@ export default function CreateSite() {
 			set_github_enabled(watchGithub);
 		}
 	}, [watchGithub, github_enabled]);
+
+	// update the password enabled state (displays the password field)
+	useEffect(() => {
+		if (watchPassword !== password_enabled) {
+			set_password_enabled(watchPassword);
+		}
+	}, [watchPassword, password_enabled]);
 
 	// send form data to backend
 	const create_site = async (new_site: unknown) => {
@@ -334,6 +345,27 @@ export default function CreateSite() {
 								</FormItem>
 							)}
 						/>
+						{password_enabled && (
+							<FormField
+								control={form.control}
+								name="password"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Password</FormLabel>
+										<FormControl>
+											<Input
+												placeholder="super_secret_password"
+												{...field}
+											/>
+										</FormControl>
+										<FormDescription>
+											Enter the password visitors will need to access your site here.
+										</FormDescription>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+						)}
 						{/* <FormField
               control={form.control}
               name="rss_enabled"

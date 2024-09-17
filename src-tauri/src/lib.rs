@@ -60,13 +60,14 @@ pub struct SiteDetails {
 
 /// NewSite struct
 /// cotnains the settings and options for a new site
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NewSite {
     pub site_name: String,
     pub custom_domain: String,
     pub favicon_file: String,
     pub template: String,
     pub password_enabled: bool,
+    pub password: String,
     pub rss_enabled: bool,
     pub github_enabled: bool,
     pub github_url: String,

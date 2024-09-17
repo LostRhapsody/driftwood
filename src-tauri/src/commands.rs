@@ -56,13 +56,22 @@ pub fn create_site(new_site: &str) -> Result<String, String> {
     let site: NewSite = serde_json::from_str(new_site).map_err(|e| e.to_string())?;
     let netlify = Netlify::new().map_err(|e| e.to_string())?;
 
-    match netlify.create_site(site) {
-        Ok(site_details) => Ok(serde_json::json!({
-            "success":true,
-            "title": "created",
-            "description": "New site created successfully! 🎉 Let's start building!",
-            "name": site_details.name,
-        }).to_string()),
+    match netlify.create_site(site.clone()) {
+        Ok(site_details) => {
+            // if github or password enabled are true, perform some follow-up API requests
+            if site.github_enabled {
+                println!("Github not yet implemented.");
+            }
+            if site.password_enabled {
+                println!("Password not yet implemented.");
+            }
+            Ok(serde_json::json!({
+                "success":true,
+                "title": "created",
+                "description": "New site created successfully! 🎉 Let's start building!",
+                "name": site_details.name,
+            }).to_string())
+        },
         Err(err) => Err(
             serde_json::json!({
                 "success":false,
