@@ -57,8 +57,20 @@ pub fn create_site(new_site: &str) -> Result<String, String> {
     let netlify = Netlify::new().map_err(|e| e.to_string())?;
 
     match netlify.create_site(site) {
-        Ok(site_details) => Ok(serde_json::to_string(&site_details).unwrap()),
-        Err(err) => Err(err.to_string()),
+        Ok(site_details) => Ok(serde_json::json!({
+            "success":true,
+            "title": "created",
+            "description": "New site created successfully! 🎉 Let's start building!",
+            "name": site_details.name,
+        }).to_string()),
+        Err(err) => Err(
+            serde_json::json!({
+                "success":false,
+                "title": "Failed to create site",
+                "description": err.to_string(),
+                "name": "error",
+            }).to_string()
+        ),
     }
 
 }

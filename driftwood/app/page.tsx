@@ -1,6 +1,4 @@
 "use client";
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import React from "react";
 import { useState, useEffect } from "react";
 
 import Sites from "@/components/app_ui/sites";
@@ -12,6 +10,8 @@ import Link from "next/link";
 
 import { invoke } from "@tauri-apps/api/tauri";
 import { AlignLeft, Globe, House, Bug, LogOut } from "lucide-react";
+
+import { Toaster } from "@/components/ui/toaster"
 
 export default function Home() {
 
@@ -57,7 +57,7 @@ export default function Home() {
     setHasToken(hasToken);
   };
 
-  const handleLoginFailure = (error: any) => {
+  const handleLoginFailure = (error: unknown) => {
     console.error("Login failed:", error);
     setHasToken(false);
   };
@@ -121,6 +121,7 @@ export default function Home() {
             <>{renderContent()}</>
           )}
         </main>
+        <Toaster />
       </div>
     </div>
   );

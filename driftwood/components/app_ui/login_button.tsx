@@ -1,12 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import React from "react";
+import type React from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { Button } from "@/components/ui/button";
 import { LogIn } from "lucide-react";
 
 interface LoginButtonProps {
   onLoginSuccess: (hasToken: boolean) => void;
-  onLoginFailure: (error: any) => void;
+  onLoginFailure: (error: unknown) => void;
 }
 
 const LoginButton: React.FC<LoginButtonProps> = ({
