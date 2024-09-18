@@ -78,6 +78,15 @@ static POST_PAGE_TEMPLATE: &'static str = include_str!("templates/default/post-t
 static INDEX_TEMPLATE: &'static str = include_str!("templates/default/index-template.html");
 
 impl Post {
+    /// Creates a new Post instance with the given title.
+    ///
+    /// # Arguments
+    ///
+    /// * `title` - A string that holds the title of the post.
+    ///
+    /// # Returns
+    ///
+    /// A new Post instance with the current date and empty content, filename, and tags.
     pub fn new(title: String) -> Post {
         println!("Creating new post: {}", title);
         let date = chrono::Local::now();
@@ -94,6 +103,11 @@ impl Post {
         }
     }
 
+    /// Cleans the filename by removing special characters and formatting it.
+    ///
+    /// # Returns
+    ///
+    /// A Result indicating success or failure.
     pub fn clean_filename(&mut self) -> Result<()> {
         println!("Cleaning filename: {}", self.title);
         let re = Regex::new(r"[^a-zA-Z0-9\s]")?;
@@ -112,12 +126,26 @@ impl Post {
         Ok(())
     }
 
+    /// Builds the post name from the filename.
+    ///
+    /// # Returns
+    ///
+    /// A Result indicating success or failure.
     pub fn build_post_name(&mut self) -> Result<()> {
         self.title = self.filename.replace("-", " ");
         println!("Post name built: {}", self.title);
         Ok(())
     }
 
+    /// Checks if the post directory exists for the given site, creates it if not.
+    ///
+    /// # Arguments
+    ///
+    /// * `site` - A reference to the SiteDetails.
+    ///
+    /// # Returns
+    ///
+    /// A Result indicating success or failure.
     pub fn check_post_dir(site: &SiteDetails) -> Result<()> {
         let post_path: PathBuf = SiteDetails::build_site_path(&site)?.join("md_posts");
         println!("Checking post directory: {}", post_path.to_str().unwrap());
@@ -128,6 +156,15 @@ impl Post {
         Ok(())
     }
 
+    /// Builds the path for the post file.
+    ///
+    /// # Arguments
+    ///
+    /// * `site` - A reference to the SiteDetails.
+    ///
+    /// # Returns
+    ///
+    /// A Result containing the PathBuf for the post file.
     pub fn build_post_path(&self, site: &SiteDetails) -> Result<PathBuf> {
         let post_path = SiteDetails::build_site_path(&site)?
             .join("md_posts")
@@ -136,6 +173,15 @@ impl Post {
         Ok(post_path)
     }
 
+    /// Cleans and sets the tags for the post.
+    ///
+    /// # Arguments
+    ///
+    /// * `new_tags` - A string containing comma-separated tags.
+    ///
+    /// # Returns
+    ///
+    /// A Result indicating success or failure.
     pub fn clean_and_set_tags(&mut self, new_tags: String) -> Result<()> {
         println!("Cleaning and setting tags: {}", new_tags);
         let tags = new_tags
@@ -152,6 +198,15 @@ impl Post {
         Ok(())
     }
 
+    /// Writes the post content to disk.
+    ///
+    /// # Arguments
+    ///
+    /// * `site` - A reference to the SiteDetails.
+    ///
+    /// # Returns
+    ///
+    /// A Result indicating success or failure.
     pub fn write_post_to_disk(&self, site: &SiteDetails) -> Result<()> {
         println!("Writing post to disk: {}", self.filename);
         let new_posts_path = SiteDetails::build_site_path(&site)?
@@ -212,7 +267,36 @@ impl SiteDetails {
         Ok(())
     }
 
-    pub fn check_for_site_repo(&self) -> Result<bool> {
+    pub fn check_site_dir(&self) -> Result<()> {
+        let site_path = SiteDetails::build_site_path(&self)?;
+        println!("Checking site directory: {}", site_path.to_str().unwrap());
+        let sites_dir = PathBuf::from("sites");
+        // create sites dir
+        if !sites_dir.exists() {
+            fs::create_dir(&sites_dir).context("Failed to create sites directory")?;
+        }
+        // create this site's specific dir
+        if !site_path.exists() {
+            fs::create_dir(site_path)
+                .context("Failed to create this site's directory")?;
+        }
+        Ok(())
+    }
+
+    pub fn move_favicon_to_site_dir(&self,favicon_file:String) ->  Result<()> {
+        // move the favicon to the site dir
+        let favicon_path = favicon_file;
+        let site_path = self.build_site_path()?;
+        let dest_path = site_path.join("favicon.ico");
+        if let Err(e) = fs::copy(favicon_path, &dest_path) {
+            println!("Failed to copy favicon file: {}", e);
+        } else {
+            println!("Favicon copied to: {}", dest_path.display());
+        }
+        Ok(())
+    }
+
+    pub fn eck_for_site_repo(&self) -> Result<bool> {
         let repo_path = SiteDetails::build_site_path(self)?;
         let repo = Repository::open(repo_path);
         Ok(repo.is_ok())

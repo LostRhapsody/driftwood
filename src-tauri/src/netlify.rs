@@ -1,4 +1,5 @@
 use crate::crypto;
+use driftwood::{NewSite, OAuth2, SiteDetails};
 use reqwest::Url;
 use rsa::RsaPrivateKey;
 use serde::{Deserialize, Serialize};
@@ -15,7 +16,6 @@ use std::{
     time::Duration,
 };
 use webbrowser;
-use driftwood::{OAuth2, SiteDetails, NewSite};
 
 /// Netlify struct
 /// Contains the user agent, token, and base URL for the Netlify API
@@ -96,7 +96,7 @@ impl Netlify {
                         token: token,
                         url: base_url,
                     })
-                },
+                }
                 Err(e) => {
                     println!("> Failed to get token: {}", e);
                     Err(format!("> Failed to get token: {}", e).into())
@@ -110,10 +110,10 @@ impl Netlify {
             Ok((code, state, private_key)) => {
                 match Self::exchange_code_for_token(code, state, private_key) {
                     Ok(token) => Ok(token),
-                    Err(e) => Err(format!("Failed to exchange code for token: {}", e))
+                    Err(e) => Err(format!("Failed to exchange code for token: {}", e)),
                 }
-            },
-            Err(e) => Err(format!("Failed to trigger login: {:?}", e))
+            }
+            Err(e) => Err(format!("Failed to trigger login: {:?}", e)),
         }
     }
 
@@ -159,10 +159,16 @@ impl Netlify {
 
         let request_url = format!("{}sites", self.url);
 
+        let password = if new_site.password_enabled {
+            new_site.password
+        } else {
+            String::new()
+        };
+
         let json = serde_json::json!({
             "name": new_site.site_name,
             "custom_domain": new_site.custom_domain,
-            "password": new_site.password,
+            "password": password,
             "force_ssl": true,
         });
 
@@ -170,10 +176,26 @@ impl Netlify {
 
         let client = self.build_client();
 
+        // send request
         let response = self.send_post_request(client, request_url, json);
 
-        // return the response
-        self.read_object_response(response)
+        // read the response
+        let response = self.read_object_response(response);
+
+        // return the response (create the site dir if good)
+        match response {
+            Ok(site) => {
+                let _ = site.check_site_dir()?;
+                if new_site.favicon_file != "" {
+                    site.move_favicon_to_site_dir(new_site.favicon_file)?;
+                }
+                return Ok(site);
+            }
+            Err(err) => {
+                println!("Error: {}", err);
+                return Err(err.into());
+            }
+        }
     }
 
     /// Update an existing site
@@ -264,7 +286,7 @@ impl Netlify {
         println!("> File path: {}", file_path.display());
 
         let full_path_str: String;
-        let full_path ;
+        let full_path;
 
         // if the file is /index.html, full path will be sitename_siteid/index.html
         if file_path.to_string_lossy() == "/index.html" {
@@ -509,7 +531,22 @@ impl Netlify {
                     let sites: SiteDetails = serde_json::from_value(json)?;
                     Ok(sites)
                 } else {
-                    return Err(format!("> Request failed: {}", resp.text().unwrap()).into());
+                    match resp.json::<serde_json::Value>() {
+                        Ok(json) => {
+                            println!("> Request failed: {}", json);
+                            let error_message = json["errors"]["subdomain"][0]
+                                .as_str()
+                                .or_else(|| json["message"].as_str())
+                                .or_else(|| json["code"].as_str())
+                                .unwrap_or("Unable to extract error message");
+                            return Err(format!("> Request failed: {}", error_message).into());
+                        }
+                        Err(_) => {
+                            return Err(
+                                format!("> Request failed: Unable to parse response").into()
+                            );
+                        }
+                    }
                 }
             }
             Err(e) => {
@@ -630,8 +667,9 @@ impl Netlify {
                                 if let (Some(code), Some(state)) = (code, state) {
                                     let _ = sender.send(Ok((code, state)));
                                     // Send "You can close this screen now" message
-                                    let file_contents = fs::read_to_string("src/templates/auth/code_received.html")
-                                    .expect("Should have been able to read the file");
+                                    let file_contents =
+                                        fs::read_to_string("src/templates/auth/code_received.html")
+                                            .expect("Should have been able to read the file");
 
                                     // Create the HTTP response
                                     let response = format!(

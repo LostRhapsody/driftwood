@@ -9,7 +9,7 @@ edition = "2021"
 tauri-build = { version = "1", features = [] }
 
 [dependencies]
-tauri = { version = "1", features = [] }
+tauri = { version = "1", features = [ "dialog-all", "shell-all"] }
 devtools = "0.3.3"
 # convert html to markdown
 pulldown-cmark = "0.12.0"

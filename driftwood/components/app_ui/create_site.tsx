@@ -1,7 +1,12 @@
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { invoke } from "@tauri-apps/api/tauri";
-import { Check, ChevronsUpDown } from "lucide-react";
+import {
+	Check,
+	ChevronsUpDown,
+	TriangleAlert,
+	SquareArrowOutUpRight,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -39,9 +44,11 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { cn, processResponse } from "@/lib/utils";
+import { cn, processResponse, openWiki } from "@/lib/utils";
+import openFilePicker from "@/lib/file_picker";
 
 // available website templates
 const templates = [{ label: "Default", value: "default" }] as const;
@@ -64,6 +71,7 @@ export default function CreateSite() {
 	const [password_enabled, set_password_enabled] = useState(false);
 	const [isAlertOpen, setIsAlertOpen] = useState(false);
 	const [name, setName] = useState("");
+	const disabled_fields = true;
 	const { toast } = useToast();
 
 	// Create site form defition
@@ -141,7 +149,6 @@ export default function CreateSite() {
 				sites_elemnt.innerHTML = response;
 			}
 		} catch (err) {
-
 			// parse the error
 			if (typeof err === "string") {
 				const err_json = JSON.parse(err);
@@ -182,14 +189,20 @@ export default function CreateSite() {
 					<AlertDialogHeader>
 						<AlertDialogTitle>Site created!</AlertDialogTitle>
 						<AlertDialogDescription>
-							Your site is now created. Congrats! Time to start building.
-							Select from an option below.
+							Your site is now created. Congrats! Time to start building. Select
+							from an option below.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<a href="/"><AlertDialogAction>Home</AlertDialogAction></a>
-						<a href={`/sites/${name}`}><AlertDialogAction>Edit site</AlertDialogAction></a>
-						<a href={`/sites/${name}/mew_post`}><AlertDialogAction>Add a post</AlertDialogAction></a>
+						<a href="/">
+							<AlertDialogAction>Home</AlertDialogAction>
+						</a>
+						<a href={`/sites/${name}`}>
+							<AlertDialogAction>Edit site</AlertDialogAction>
+						</a>
+						<a href={`/sites/${name}/mew_post`}>
+							<AlertDialogAction>Add a post</AlertDialogAction>
+						</a>
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
@@ -244,6 +257,17 @@ export default function CreateSite() {
 											{...field}
 										/>
 									</FormControl>
+									<Button
+										onClick={async (e) => {
+											e.preventDefault();
+											const filePath = await openFilePicker();
+											if (filePath) {
+												field.onChange(filePath);
+											}
+										}}
+									>
+										Upload File
+									</Button>
 									<FormDescription>
 										The favicon (little icon that goes in the browser&amp;s tab)
 										for your site.
@@ -326,7 +350,7 @@ export default function CreateSite() {
 							control={form.control}
 							name="password_enabled"
 							render={({ field }) => (
-								<FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+								<FormItem className="hidden flex-row items-center justify-between rounded-lg border p-4">
 									<div className="space-y-0.5">
 										<FormLabel className="text-base">
 											Password enabled
@@ -346,57 +370,102 @@ export default function CreateSite() {
 							)}
 						/>
 						{password_enabled && (
-							<FormField
-								control={form.control}
-								name="password"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Password</FormLabel>
-										<FormControl>
-											<Input
-												placeholder="super_secret_password"
-												{...field}
-											/>
-										</FormControl>
-										<FormDescription>
-											Enter the password visitors will need to access your site here.
-										</FormDescription>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
+							<div>
+								<Alert className="bg-warning-bg text-warning-foreground border-warning-foreground mb-4 hidden">
+									<TriangleAlert className="h-4 w-4 stroke-warning-foreground" />
+									<AlertTitle className="underline text-lg">
+										Passwords require Netlify Pro
+									</AlertTitle>
+									<AlertDescription>
+										To use this option, you're account must have an active
+										Netlify Pro subscription.
+										<br />
+										Learn more at:{" "}
+										<Button
+											variant={"ghost"}
+											className="p-0"
+											onClick={(e) => {
+												e.preventDefault();
+												openWiki("netlify-pro");
+											}}
+										>
+											wiki.driftwood.com&nbsp;
+											<SquareArrowOutUpRight />
+										</Button>
+									</AlertDescription>
+								</Alert>
+								<FormField
+									control={form.control}
+									name="password"
+									render={({ field }) => (
+										<FormItem className="hidden">
+											<FormLabel>Password</FormLabel>
+											<FormControl>
+												<Input placeholder="super_secret_password" {...field} />
+											</FormControl>
+											<FormDescription>
+												Enter the password visitors will need to access your
+												site here.
+											</FormDescription>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+							</div>
 						)}
-						{/* <FormField
-              control={form.control}
-              name="rss_enabled"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">
-                      RSS enabled
-                    </FormLabel>
-                    <FormDescription>
-                      Turn this on to add an RSS feed to your website.
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            /> */}
+						<FormField
+							control={form.control}
+							name="rss_enabled"
+							render={({ field }) => (
+								<FormItem className="hidden flex-row items-center justify-between rounded-lg border p-4">
+									<div className="space-y-0.5">
+										<FormLabel className="text-base">RSS enabled</FormLabel>
+										<FormDescription>
+											Turn this on to add an RSS feed to your website.<br/>
+											Learn more about RSS at&nbsp;
+											<Button
+											variant={"ghost"}
+											className="p-0"
+											onClick={(e) => {
+												e.preventDefault();
+												openWiki("rss");
+											}}
+										>
+											wiki.driftwood.com&nbsp;
+											<SquareArrowOutUpRight />
+										</Button>
+										</FormDescription>
+									</div>
+									<FormControl>
+										<Switch
+											checked={field.value}
+											onCheckedChange={field.onChange}
+										/>
+									</FormControl>
+								</FormItem>
+							)}
+						/>
 						<FormField
 							control={form.control}
 							name="github_enabled"
 							render={({ field }) => (
-								<FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+								<FormItem className="hidden flex-row items-center justify-between rounded-lg border p-4">
 									<div className="space-y-0.5">
 										<FormLabel className="text-base">Github enabled</FormLabel>
 										<FormDescription>
-											Turn this on to connect your site to a Github repo.
+											Turn this on to connect your site to a Github repo.<br/>
+											Learn more about connecting Github at&nbsp;
+											<Button
+											variant={"ghost"}
+											className="p-0"
+											onClick={(e) => {
+												e.preventDefault();
+												openWiki("github");
+											}}
+										>
+											wiki.driftwood.com&nbsp;
+											<SquareArrowOutUpRight />
+										</Button>
 										</FormDescription>
 									</div>
 									<FormControl>
@@ -413,7 +482,7 @@ export default function CreateSite() {
 								control={form.control}
 								name="github_url"
 								render={({ field }) => (
-									<FormItem>
+									<FormItem className="hidden">
 										<FormLabel>Github URL</FormLabel>
 										<FormControl>
 											<Input
