@@ -1,7 +1,7 @@
 use crate::netlify::Netlify;
 use serde::Serialize;
 use tinytemplate::{format_unescaped, TinyTemplate};
-use driftwood::{SiteDetails, NewSite};
+use crate::driftwood::{SiteDetails, NewSite};
 use std::path::Path;
 
 #[derive(Serialize)]

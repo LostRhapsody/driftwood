@@ -8,7 +8,7 @@ import LoginButton from "@/components/app_ui/login_button";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from '@tauri-apps/api/core';
 import { AlignLeft, Globe, House, Bug, LogOut } from "lucide-react";
 
 import { Toaster } from "@/components/ui/toaster"

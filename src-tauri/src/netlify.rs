@@ -1,5 +1,5 @@
 use crate::crypto;
-use driftwood::{NewSite, OAuth2, SiteDetails};
+use crate::driftwood::{NewSite, OAuth2, SiteDetails};
 use reqwest::Url;
 use rsa::RsaPrivateKey;
 use serde::{Deserialize, Serialize};

@@ -6,11 +6,17 @@ authors = ["Evan Robertson"]
 edition = "2021"
 
 [build-dependencies]
-tauri-build = { version = "1", features = [] }
+tauri-build = { version = "2.0.0-rc", features = [] }
+
+# this is for tauri
+[lib]
+name = "app_lib"
+path = "src/lib.rs"
 
 [dependencies]
-tauri = { version = "1", features = [ "dialog-all", "shell-all"] }
-devtools = "0.3.3"
+tauri = { version = "2.0.0-rc", features = [] }
+tauri-plugin-dialog = "2.0.0-rc"
+tauri-plugin-shell = "2.0.0-rc"
 # convert html to markdown
 pulldown-cmark = "0.12.0"
 # get dates and times

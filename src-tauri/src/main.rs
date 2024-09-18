@@ -1,30 +1,5 @@
-// Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-pub mod netlify;
-pub mod crypto;
-pub mod commands;
-
-use dotenv::dotenv;
-use crate::commands::{
-    list_sites,
-    netlify_login,
-    netlify_logout,
-    check_token,
-    create_site,
-};
-
 fn main() {
-    dotenv().ok();
-
-    tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![
-            netlify_login,
-            netlify_logout,
-            list_sites,
-            check_token,
-            create_site,
-        ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+  app_lib::run();
 }

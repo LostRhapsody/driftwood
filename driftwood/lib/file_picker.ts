@@ -1,4 +1,4 @@
-import { open } from "@tauri-apps/api/dialog";
+import { open } from "@tauri-apps/plugin-dialog";
 
 /**
  * Open a file picker dialog and return the selected file path or array of paths.
@@ -19,7 +19,7 @@ export default async function openFilePicker() {
 		console.log("Selected file(s):", selected);
         return selected;
 	}
-    
+
     console.log("No file selected");
     return null;
 }
