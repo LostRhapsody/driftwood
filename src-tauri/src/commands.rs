@@ -1,17 +1,6 @@
 use crate::netlify::Netlify;
-use serde::Serialize;
-use tinytemplate::{format_unescaped, TinyTemplate};
 use crate::driftwood::{SiteDetails, NewSite};
 use std::path::Path;
-
-#[derive(Serialize)]
-struct SiteCardContext {
-    title: String,
-    image: String,
-    sitename: String,
-    siteid: String,
-}
-
 
 #[tauri::command]
 pub fn netlify_login() -> bool {
@@ -89,46 +78,32 @@ pub fn list_sites() -> String {
 
     println!("Listing sites");
 
-    static SITE_CARD_TEMPLATE: &'static str =
-        include_str!("templates/default/site-card-template.html");
-    let mut tt_site_card = TinyTemplate::new();
-    tt_site_card.set_default_formatter(&format_unescaped);
-
-    match tt_site_card.add_template("site", SITE_CARD_TEMPLATE) {
-        Ok(()) => (),
-        Err(_) => return String::from("Failed to add template"),
-    }
-
-    println!("Added template");
-
-    let mut rendered_site_cards = String::new();
-
     match Netlify::new() {
         Ok(netlify) => {
             println!("Netlify instance created");
             let site_details: Vec<SiteDetails> = get_sites(netlify);
+            let mut sites_json = Vec::new();
+
             for site in site_details {
-                let site_name = site.name.unwrap_or_else(|| "".to_string());
-                let site_img = site.screenshot_url.unwrap_or_else(|| "https://images.unsplash.com/photo-1615147342761-9238e15d8b96?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1001&q=80".to_string());
-                let site_id: String = site.id.unwrap_or_else(|| "".to_string());
-                let site_card_context: SiteCardContext = SiteCardContext {
-                    title: site_name.clone(),
-                    image: site_img,
-                    sitename: site_name,
-                    siteid: site_id,
-                };
-                rendered_site_cards.push_str(
-                    &tt_site_card
-                        .render("site", &site_card_context)
-                        .expect("Failed templating the site card links"),
-                );
+                let site_json = serde_json::json!({
+                    "name": site.name.unwrap_or_else(|| "".to_string()),
+                    "domain": site.domain.unwrap_or_else(|| "".to_string()),
+                    "id": site.id.unwrap_or_else(|| "".to_string()),
+                    "ssl": site.ssl.unwrap_or(false),
+                    "url": site.url.unwrap_or_else(|| "".to_string()),
+                    "screenshot_url": site.screenshot_url.unwrap_or_else(|| "https://images.unsplash.com/photo-1615147342761-9238e15d8b96?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1001&q=80".to_string()),
+                    "required": site.required.is_some(),
+                });
+                sites_json.push(site_json);
             }
-            rendered_site_cards
+
+            serde_json::to_string(&sites_json).unwrap_or_else(|_| String::from("Failed to serialize sites"))
         }
         Err(e) => {
             println!("Error: {:?}", e);
             String::from("Failed to login, please try again")
         }
+
     }
 }
 

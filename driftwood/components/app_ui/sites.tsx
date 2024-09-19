@@ -1,24 +1,36 @@
 "use client";
-// TODO!!!!! Sites doesn't populate, freaking get element by ID doesn't work in v2 for some reason?
-import { useState, useEffect, useRef } from 'react';
-import { invoke } from "@tauri-apps/api/core";
+import { useState, useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/core';
+import SitesList from '@/components/app_ui/site_card';
+
+type Site = {
+  name: string;
+  domain: string;
+  id: string;
+  ssl: boolean;
+  url: string;
+  screenshot_url: string;
+  required: boolean;
+};
 
 export default function Sites() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const sitesRef = useRef("hi");  // Create a ref for the sites div
+  const [data, setData] = useState<Site[] | null>(null);
 
   useEffect(() => {
     const loadSites = async () => {
       try {
-        // const response = await invoke<string>("list_sites");
-        // console.log("Sites response:", response);
-        // if (!response || response === '') {
-        //   setError('No sites found');
-        //   return;
-        // }
+        const response = await invoke<string>("list_sites");
+        console.log("Sites response:", response);
+        if (!response || response === '') {
+          setError('No sites found');
+          return;
+        }
 
-        // sitesRef.current.innerHTML =  "<h1>Websites!</h1>"; //response; // Use the ref instead of getElementById
+        // Parse and set the site data
+        const parsedData: Site[] = JSON.parse(response);
+        setData(parsedData);
 
       } catch (err) {
         setError('Failed to load sites');
@@ -35,11 +47,10 @@ export default function Sites() {
   if (error) return <div>Error: {error}</div>;
 
   return (
-    <div>
+    <div className="w-full">
       <h1 className="text-4xl pb-2">Your sites</h1>
-      <div ref={sitesRef.current} id="sites" className="w-full flex flex-wrap gap-8 justify-start">
-        {sitesRef.current}
-      </div>
+         {/* Ensure data is not null before passing to SitesList */}
+         {data && <SitesList sites={data} />}
     </div>
   );
 }
