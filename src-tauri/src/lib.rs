@@ -13,6 +13,7 @@ use crate::commands::{
     netlify_logout,
     check_token,
     create_site,
+    refresh_sites,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -26,6 +27,7 @@ pub fn run() {
             list_sites,
             check_token,
             create_site,
+            refresh_sites,
         ])
         .plugin(tauri_plugin_dialog::init())
         .run(tauri::generate_context!())

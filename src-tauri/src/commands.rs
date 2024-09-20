@@ -77,6 +77,41 @@ pub fn create_site(new_site: &str) -> Result<String, String> {
 }
 
 #[tauri::command]
+pub fn refresh_sites() -> String {
+    match Netlify::new() {
+        Ok(netlify) => {
+            println!("Netlify instance created");
+            let site_details: Vec<SiteDetails> = get_sites(netlify);
+            let mut sites_json = Vec::new();
+
+            for site in site_details {
+                let site_json = serde_json::json!({
+                    "name": site.name.unwrap_or_else(|| "".to_string()),
+                    "domain": site.domain.unwrap_or_else(|| "".to_string()),
+                    "id": site.id.unwrap_or_else(|| "".to_string()),
+                    "ssl": site.ssl.unwrap_or(false),
+                    "url": site.url.unwrap_or_else(|| "".to_string()),
+                    "screenshot_url": site.screenshot_url.unwrap_or_else(|| "https://images.unsplash.com/photo-1615147342761-9238e15d8b96?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1001&q=80".to_string()),
+                    "required": site.required.is_some(),
+                });
+                sites_json.push(site_json);
+            }
+
+            let sites_json_string = serde_json::to_string(&sites_json).unwrap_or_else(|_| String::from("Failed to serialize sites"));
+            if let Err(e) = save_json_to_file("sites/sites.json", sites_json) {
+                eprintln!("Failed to save JSON to file: {}", e);
+            }
+            sites_json_string
+
+        }
+        Err(e) => {
+            println!("Error: {:?}", e);
+            String::from("Failed to retrieve sites from Netlify")
+        }
+    }
+}
+
+#[tauri::command]
 pub fn list_sites() -> String {
 
     println!("Listing sites");
@@ -109,7 +144,7 @@ pub fn list_sites() -> String {
                     }
 
                     let sites_json_string = serde_json::to_string(&sites_json).unwrap_or_else(|_| String::from("Failed to serialize sites"));
-                    if let Err(e) = save_json_to_file("sites/sites.json", &sites_json_string) {
+                    if let Err(e) = save_json_to_file("sites/sites.json", sites_json) {
                         eprintln!("Failed to save JSON to file: {}", e);
                     }
                     sites_json_string
@@ -149,16 +184,35 @@ fn get_sites(netlify: Netlify) -> Vec<SiteDetails> {
     }
 }
 
-/// saves a json value to disk
-fn save_json_to_file(file_path: &str, json_data: &str) -> Result<(), std::io::Error> {
-    let serialized_json = serde_json::to_string(json_data).unwrap_or_else(|_| String::from("Failed to serialize sites"));
-    let mut file = File::create(file_path)?;
+/// Saves a JSON vector to disk by appending the entire vector as a single array.
+fn save_json_to_file(file_path: &str, json_data: Vec<Value>) -> Result<(), std::io::Error> {
+    // Serialize the entire vector as a single JSON array
+    let serialized_json = serde_json::to_string(&json_data).unwrap_or_else(|_| String::from("Failed to serialize sites"));
+
+    // Open the file in append mode and create it if it doesn't exist
+    let mut file = OpenOptions::new()
+        .write(true)
+        .truncate(true) // This ensures the file is emptied before writing
+        .create(true)
+        .open(file_path)?;
+
+    // Write the serialized JSON array to the file
     file.write_all(serialized_json.as_bytes())?;
+    file.write_all(b"\n")?;  // Optional: Add a newline at the end
+
     Ok(())
 }
 
 /// reads a json value from disk
 fn load_json_from_file(file_path: &str) -> Result<Option<Value>, std::io::Error> {
+    // if the path exists first and if it doesn't, create it.
+    // this will trigger "contents.is_empty" and we'll retrieve it from the API
+    let path = Path::new(file_path);
+
+    if !path.exists() {
+        File::create(path)?;
+    }
+
     let mut file = OpenOptions::new().read(true).open(file_path)?;
 
     let mut contents = String::new();
