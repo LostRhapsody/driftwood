@@ -1,6 +1,9 @@
 use crate::netlify::Netlify;
 use crate::driftwood::{SiteDetails, NewSite};
 use std::path::Path;
+use std::fs::{File, OpenOptions};
+use std::io::{Read, Write};
+use serde_json::{Value, from_str};
 
 #[tauri::command]
 pub fn netlify_login() -> bool {
@@ -78,33 +81,52 @@ pub fn list_sites() -> String {
 
     println!("Listing sites");
 
-    match Netlify::new() {
-        Ok(netlify) => {
-            println!("Netlify instance created");
-            let site_details: Vec<SiteDetails> = get_sites(netlify);
-            let mut sites_json = Vec::new();
+    // Load JSON from file
+    match load_json_from_file("sites/sites.json") {
+        Ok(Some(loaded_json)) => {
+            println!("Loaded JSON: {}", loaded_json);
+            serde_json::to_string(&loaded_json).unwrap_or_else(|_| String::from("Failed to serialize sites from disk"))
+        }
+        Ok(None) =>{
+            println!("File is empty or JSON could not be parsed.");
+            match Netlify::new() {
+                Ok(netlify) => {
+                    println!("Netlify instance created");
+                    let site_details: Vec<SiteDetails> = get_sites(netlify);
+                    let mut sites_json = Vec::new();
 
-            for site in site_details {
-                let site_json = serde_json::json!({
-                    "name": site.name.unwrap_or_else(|| "".to_string()),
-                    "domain": site.domain.unwrap_or_else(|| "".to_string()),
-                    "id": site.id.unwrap_or_else(|| "".to_string()),
-                    "ssl": site.ssl.unwrap_or(false),
-                    "url": site.url.unwrap_or_else(|| "".to_string()),
-                    "screenshot_url": site.screenshot_url.unwrap_or_else(|| "https://images.unsplash.com/photo-1615147342761-9238e15d8b96?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1001&q=80".to_string()),
-                    "required": site.required.is_some(),
-                });
-                sites_json.push(site_json);
+                    for site in site_details {
+                        let site_json = serde_json::json!({
+                            "name": site.name.unwrap_or_else(|| "".to_string()),
+                            "domain": site.domain.unwrap_or_else(|| "".to_string()),
+                            "id": site.id.unwrap_or_else(|| "".to_string()),
+                            "ssl": site.ssl.unwrap_or(false),
+                            "url": site.url.unwrap_or_else(|| "".to_string()),
+                            "screenshot_url": site.screenshot_url.unwrap_or_else(|| "https://images.unsplash.com/photo-1615147342761-9238e15d8b96?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1001&q=80".to_string()),
+                            "required": site.required.is_some(),
+                        });
+                        sites_json.push(site_json);
+                    }
+
+                    let sites_json_string = serde_json::to_string(&sites_json).unwrap_or_else(|_| String::from("Failed to serialize sites"));
+                    if let Err(e) = save_json_to_file("sites/sites.json", &sites_json_string) {
+                        eprintln!("Failed to save JSON to file: {}", e);
+                    }
+                    sites_json_string
+                }
+                Err(e) => {
+                    println!("Error: {:?}", e);
+                    String::from("Failed to login, please try again")
+                }
+
             }
-
-            serde_json::to_string(&sites_json).unwrap_or_else(|_| String::from("Failed to serialize sites"))
         }
         Err(e) => {
-            println!("Error: {:?}", e);
-            String::from("Failed to login, please try again")
+            eprintln!("Failed to load JSON from file: {}", e);
+            String::from(format!("Failed to load JSON from file: {}", e))
         }
-
     }
+
 }
 
 /// Get all the sites for the user
@@ -124,5 +146,28 @@ fn get_sites(netlify: Netlify) -> Vec<SiteDetails> {
             println!("Error: {:?}", e);
             vec![]
         }
+    }
+}
+
+/// saves a json value to disk
+fn save_json_to_file(file_path: &str, json_data: &str) -> Result<(), std::io::Error> {
+    let serialized_json = serde_json::to_string(json_data).unwrap_or_else(|_| String::from("Failed to serialize sites"));
+    let mut file = File::create(file_path)?;
+    file.write_all(serialized_json.as_bytes())?;
+    Ok(())
+}
+
+/// reads a json value from disk
+fn load_json_from_file(file_path: &str) -> Result<Option<Value>, std::io::Error> {
+    let mut file = OpenOptions::new().read(true).open(file_path)?;
+
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)?;
+
+    if !contents.is_empty() {
+        let json_data: Value = from_str(&contents).unwrap_or(Value::Null);
+        Ok(Some(json_data))
+    } else {
+        Ok(None)
     }
 }
