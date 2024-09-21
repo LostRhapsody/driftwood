@@ -19,10 +19,10 @@ type Site = {
 	ssl: boolean;
 	url: string;
 	screenshot_url: string;
-	required: boolean;
 };
 
-export default function Sites() {
+// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+export default function Sites(onEditClick:any) {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [data, setData] = useState<Site[] | null>(null);
@@ -52,8 +52,9 @@ export default function Sites() {
 	}, []);
 
   const handleRefresh = async () => {
+		const return_sites = true;
     try {
-      const response = await invoke<string>("refresh_sites");
+      const response = await invoke<string>("refresh_sites", { return_sites });
 
       // Parse and set the site data
       const parsedData: Site[] = JSON.parse(response);
@@ -90,7 +91,7 @@ export default function Sites() {
 				</TooltipProvider>
 			</div>
 			{/* Ensure data is not null before passing to SitesList */}
-			{data && <SitesList sites={data} />}
+			{data && <SitesList sites={data} onEditClick={onEditClick.onEditClick} />}
 		</div>
 	);
 }

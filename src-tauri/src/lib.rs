@@ -14,6 +14,8 @@ use crate::commands::{
     check_token,
     create_site,
     refresh_sites,
+    get_site_details,
+    update_site,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -28,6 +30,8 @@ pub fn run() {
             check_token,
             create_site,
             refresh_sites,
+            get_site_details,
+            update_site,
         ])
         .plugin(tauri_plugin_dialog::init())
         .run(tauri::generate_context!())

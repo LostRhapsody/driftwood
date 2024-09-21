@@ -50,10 +50,6 @@ pub fn create_site(new_site: &str) -> Result<String, String> {
 
     match netlify.create_site(site.clone()) {
         Ok(site_details) => {
-            // if github or password enabled are true, perform some follow-up API requests
-            if site.github_enabled {
-                println!("Github not yet implemented.");
-            }
             if site.password_enabled {
                 println!("Password not yet implemented.");
             }
@@ -77,7 +73,36 @@ pub fn create_site(new_site: &str) -> Result<String, String> {
 }
 
 #[tauri::command]
-pub fn refresh_sites() -> String {
+pub fn update_site(site: &str) -> Result<String, String> {
+    println!("Creating a site");
+    println!("Updated site args: {}", site);
+
+    let site: SiteDetails = serde_json::from_str(site).map_err(|e| e.to_string())?;
+    let netlify = Netlify::new().map_err(|e| e.to_string())?;
+
+    match netlify.update_site(site.clone()) {
+        Ok(site_details) => {
+            Ok(serde_json::json!({
+                "success":true,
+                "title": "created",
+                "description": "Site updated successfully! 🎉",
+                "name": site_details.name,
+            }).to_string())
+        },
+        Err(err) => Err(
+            serde_json::json!({
+                "success":false,
+                "title": "Failed to update site",
+                "description": err.to_string(),
+                "name": "error",
+            }).to_string()
+        ),
+    }
+
+}
+
+#[tauri::command]
+pub fn refresh_sites(return_site:bool) -> String {
     match Netlify::new() {
         Ok(netlify) => {
             println!("Netlify instance created");
@@ -92,7 +117,6 @@ pub fn refresh_sites() -> String {
                     "ssl": site.ssl.unwrap_or(false),
                     "url": site.url.unwrap_or_else(|| "".to_string()),
                     "screenshot_url": site.screenshot_url.unwrap_or_else(|| "https://images.unsplash.com/photo-1615147342761-9238e15d8b96?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1001&q=80".to_string()),
-                    "required": site.required.is_some(),
                 });
                 sites_json.push(site_json);
             }
@@ -101,12 +125,64 @@ pub fn refresh_sites() -> String {
             if let Err(e) = save_json_to_file("sites/sites.json", sites_json) {
                 eprintln!("Failed to save JSON to file: {}", e);
             }
-            sites_json_string
+            if return_site {
+                sites_json_string
+            } else {
+                serde_json::json!({
+                    "success":true,
+                    "title": "refreshed",
+                    "description": "Sites refreshed",
+                }).to_string()
+            }
 
         }
         Err(e) => {
             println!("Error: {:?}", e);
             String::from("Failed to retrieve sites from Netlify")
+        }
+    }
+}
+
+#[tauri::command]
+pub fn get_site_details(site_id:String) -> String {
+
+    println!("Getting details for site {}", site_id);
+
+    // Load JSON from file
+    match load_json_from_file("sites/sites.json") {
+        Ok(Some(loaded_json)) => {
+            println!("Loaded JSON: {}", loaded_json);
+            let site_details: Vec<SiteDetails> = serde_json::from_str(&loaded_json.to_string()).unwrap();
+            let mut sites_json: Option<Value> = None;
+            for site in site_details {
+                if site.id.clone().unwrap_or_else(|| "".to_string()) == site_id {
+                    let site_json = serde_json::json!({
+                        "name": site.name.unwrap_or_else(|| "".to_string()),
+                        "domain": site.domain.unwrap_or_else(|| "".to_string()),
+                        "id": site.id.unwrap_or_else(|| "".to_string()),
+                        "ssl": site.ssl.unwrap_or(false),
+                        "url": site.url.unwrap_or_else(|| "".to_string()),
+                        "screenshot_url": site.screenshot_url.unwrap_or_else(|| "https://images.unsplash.com/photo-1615147342761-9238e15d8b96?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1001&q=80".to_string()),
+                        "password": site.password.unwrap_or_else(|| "".to_string()),
+                    });
+                    sites_json = Some(site_json);
+                    break;
+                }
+            }
+            if let Some(ref data) = sites_json {
+                serde_json::to_string(&data).unwrap_or_else(|_| String::from("Failed to serialize sites from disk"))
+            } else {
+                eprintln!("Could not find this site on disk.");
+                String::from("Could not find this site on disk.")
+            }
+        }
+        Ok(None) =>{
+            eprintln!("No sites or JSON on disk to load from!");
+            String::from("No sites or JSON on disk to load from!")
+        }
+        Err(e) => {
+            eprintln!("Failed to load JSON from file: {}", e);
+            String::from(format!("Failed to load JSON from file: {}", e))
         }
     }
 }
@@ -138,7 +214,6 @@ pub fn list_sites() -> String {
                             "ssl": site.ssl.unwrap_or(false),
                             "url": site.url.unwrap_or_else(|| "".to_string()),
                             "screenshot_url": site.screenshot_url.unwrap_or_else(|| "https://images.unsplash.com/photo-1615147342761-9238e15d8b96?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1001&q=80".to_string()),
-                            "required": site.required.is_some(),
                         });
                         sites_json.push(site_json);
                     }

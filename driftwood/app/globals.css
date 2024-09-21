@@ -56,6 +56,11 @@ body {
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
+    --card-bg: #222;
+    --card-shadow: rgba(255, 255, 255, 0.1);
+    --input-bg: #333;
+    --input-shadow: inset 4px 4px 6px rgba(0, 0, 0, 0.6), inset -4px -4px 6px rgba(255, 255, 255, 0.05);
+
   }
   .dark {
     --background: 240 10% 3.9%;
@@ -84,6 +89,11 @@ body {
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+    --card-bg: #222;
+  --card-shadow: rgba(255, 255, 255, 0.1);
+  --input-bg: #333;
+  --input-shadow: inset 4px 4px 6px rgba(0, 0, 0, 0.6), inset -4px -4px 6px rgba(255, 255, 255, 0.05);
+
   }
 }
 
@@ -161,4 +171,49 @@ body {
 
 .card__link {
   text-decoration: none;
+}
+
+.edit_card{
+  background-color: var(--card-bg);
+  box-shadow: 8px 8px 15px rgba(0, 0, 0, 0.6), -8px -8px 15px rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.edit_input {
+  background-color: var(--input-bg);
+  box-shadow: var(--input-shadow);
+  border: none;
+  border-radius: 12px;
+  padding: 0.75rem;
+  color: var(--foreground);
+  width: 100%;
+}
+
+.edit_button {
+  border-radius: 12px;
+  padding: 1rem;
+  font-weight: bold;
+}
+
+.edit_save {
+  background-color: #007bff;
+  color: white;
+  box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.2), -5px -5px 15px rgba(255, 255, 255, 0.05);
+}
+
+.edit_delete {
+  background-color: #ff4c4c;
+  color: white;
+  box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.4), -5px -5px 15px rgba(255, 255, 255, 0.05);
+}
+
+.edit_alert {
+  border: 2px solid #ff4c4c;
+  padding: 1rem;
+  color: #ff4c4c;
+  background: rgba(255, 0, 0, 0.05);
+  border-radius: 12px;
+  text-align: center;
 }

@@ -202,17 +202,16 @@ impl Netlify {
     /// Returns a Result containing a vector of the new SiteDetails or an error
     pub fn update_site(
         &self,
-        existing_site_details: SiteDetails,
         new_site_details: SiteDetails,
     ) -> Result<SiteDetails, Box<dyn std::error::Error>> {
         println!(
             "> Updating site: {}",
-            existing_site_details.name.clone().unwrap()
+            new_site_details.name.clone().unwrap()
         );
 
         // create the url
         let request_url =
-            self.url.clone() + "sites/" + existing_site_details.id.clone().unwrap().as_str();
+            self.url.clone() + "sites/" + new_site_details.id.clone().unwrap().as_str();
 
         // serialize the new_site_details into a serde_json::Value
         let json = serde_json::to_value(new_site_details)?;

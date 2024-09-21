@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "biome_lint": "npx @biomejs/biome lint --write ./app/* ./components/* ./hooks/* ./lib/*",
+    "biome_lint": "npx @biomejs/biome lint --write *",
     "tauri": "tauri"
   },
   "dependencies": {

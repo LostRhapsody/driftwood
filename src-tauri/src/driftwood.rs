@@ -54,7 +54,7 @@ pub struct SiteDetails {
     pub ssl: Option<bool>,
     pub url: Option<String>,
     pub screenshot_url: Option<String>,
-    pub required: Option<Vec<String>>,
+    pub password: Option<String>,
 }
 
 
@@ -69,8 +69,6 @@ pub struct NewSite {
     pub password_enabled: bool,
     pub password: String,
     pub rss_enabled: bool,
-    pub github_enabled: bool,
-    pub github_url: String,
 }
 
 static POST_CARD_TEMPLATE: &'static str = include_str!("templates/default/blog-card-template.html");

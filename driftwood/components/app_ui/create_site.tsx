@@ -1,5 +1,4 @@
 "use client";
-/// TODO!! When creating a new site, refresh the site list on disk
 import { zodResolver } from "@hookform/resolvers/zod";
 import { invoke } from "@tauri-apps/api/core";
 import {
@@ -48,11 +47,8 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { cn, processResponse, openWiki } from "@/lib/utils";
+import { cn, processResponse, openWiki, templates } from "@/lib/utils";
 import openFilePicker from "@/lib/file_picker";
-
-// available website templates
-const templates = [{ label: "Default", value: "default" }] as const;
 
 // create site for schema
 const formSchema = z.object({
@@ -63,16 +59,12 @@ const formSchema = z.object({
 	password_enabled: z.boolean().default(false),
 	password: z.string(),
 	rss_enabled: z.boolean().default(false),
-	github_enabled: z.boolean().default(false),
-	github_url: z.string(),
 });
 
 export default function CreateSite() {
-	const [github_enabled, set_github_enabled] = useState(false);
 	const [password_enabled, set_password_enabled] = useState(false);
 	const [isAlertOpen, setIsAlertOpen] = useState(false);
 	const [name, setName] = useState("");
-	const disabled_fields = true;
 	const { toast } = useToast();
 
 	// Create site form defition
@@ -86,21 +78,11 @@ export default function CreateSite() {
 			password_enabled: false,
 			password: "",
 			rss_enabled: false,
-			github_enabled: false,
-			github_url: "",
 		},
 	});
 
-	// watch for github_enabled and password_enabled changes
-	const watchGithub = form.watch("github_enabled");
+	// watch for password_enabled changes
 	const watchPassword = form.watch("password_enabled");
-
-	// update the github enabled state (displays the github url field)
-	useEffect(() => {
-		if (watchGithub !== github_enabled) {
-			set_github_enabled(watchGithub);
-		}
-	}, [watchGithub, github_enabled]);
 
 	// update the password enabled state (displays the password field)
 	useEffect(() => {
@@ -111,6 +93,7 @@ export default function CreateSite() {
 
 	// send form data to backend
 	const create_site = async (new_site: unknown) => {
+		const fields = ["success", "title", "description", "name"];
 		const newSite = JSON.stringify(new_site);
 		try {
 			const response = await invoke<string>("create_site", {
@@ -123,7 +106,7 @@ export default function CreateSite() {
 			const response_json = JSON.parse(response);
 
 			// if can't process response (shouldn't happen)
-			if (!processResponse(response_json)) {
+			if (!processResponse(response_json,fields)) {
 				toast({
 					title: "Uh oh! Something went wrong.",
 					description: "There was a problem with your request.",
@@ -142,6 +125,7 @@ export default function CreateSite() {
 						description: description,
 					});
 					setIsAlertOpen(true);
+					refresh_sites();
 					break;
 			}
 
@@ -154,7 +138,7 @@ export default function CreateSite() {
 			if (typeof err === "string") {
 				const err_json = JSON.parse(err);
 				// if can't process response (shouldn't happen)
-				if (!processResponse(err_json)) {
+				if (!processResponse(err_json,fields)) {
 					toast({
 						title: "Uh oh! Something went wrong.",
 						description: "There was a problem with your request.",
@@ -176,6 +160,15 @@ export default function CreateSite() {
 		} finally {
 		}
 	};
+
+	const refresh_sites = async () => {
+		const return_sites = false;
+		const response = await invoke<string>("refresh_site", { return_sites });
+		const fields = ["success", "title", "description"];
+		if (!processResponse(response,fields)) {
+			console.error("Could not refresh sites")
+		}
+	}
 
 	// submit handler for site create form
 	function onSubmit(values: z.infer<typeof formSchema>) {
@@ -201,13 +194,13 @@ export default function CreateSite() {
 						<a href={`/sites/${name}`}>
 							<AlertDialogAction>Edit site</AlertDialogAction>
 						</a>
-						<a href={`/sites/${name}/mew_post`}>
+						<a href={`/sites/${name}/new_post`}>
 							<AlertDialogAction>Add a post</AlertDialogAction>
 						</a>
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
-			<div className="pb-10 dark">
+			<div className="pb-10">
 				<Form {...form}>
 					<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
 						<FormField
@@ -314,7 +307,7 @@ export default function CreateSite() {
 											<Command>
 												<CommandInput placeholder="Search language..." />
 												<CommandList>
-													<CommandEmpty>No language found.</CommandEmpty>
+													<CommandEmpty>No templates found.</CommandEmpty>
 													<CommandGroup>
 														{templates.map((template) => (
 															<CommandItem
@@ -446,60 +439,6 @@ export default function CreateSite() {
 								</FormItem>
 							)}
 						/>
-						<FormField
-							control={form.control}
-							name="github_enabled"
-							render={({ field }) => (
-								<FormItem className="hidden flex-row items-center justify-between rounded-lg border p-4">
-									<div className="space-y-0.5">
-										<FormLabel className="text-base">Github enabled</FormLabel>
-										<FormDescription>
-											Turn this on to connect your site to a Github repo.<br/>
-											Learn more about connecting Github at&nbsp;
-											<Button
-											variant={"ghost"}
-											className="p-0"
-											onClick={(e) => {
-												e.preventDefault();
-												openWiki("github");
-											}}
-										>
-											wiki.driftwood.com&nbsp;
-											<SquareArrowOutUpRight />
-										</Button>
-										</FormDescription>
-									</div>
-									<FormControl>
-										<Switch
-											checked={field.value}
-											onCheckedChange={field.onChange}
-										/>
-									</FormControl>
-								</FormItem>
-							)}
-						/>
-						{github_enabled && (
-							<FormField
-								control={form.control}
-								name="github_url"
-								render={({ field }) => (
-									<FormItem className="hidden">
-										<FormLabel>Github URL</FormLabel>
-										<FormControl>
-											<Input
-												placeholder="https://github.com/Me/MyRepo"
-												{...field}
-											/>
-										</FormControl>
-										<FormDescription>
-											Head to github, initialize an empty repository, and add
-											the URL here.
-										</FormDescription>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-						)}
 						<Button type="submit">Submit</Button>
 					</form>
 				</Form>

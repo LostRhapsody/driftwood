@@ -2,6 +2,8 @@ import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { open } from "@tauri-apps/plugin-shell";
 
+export const templates = [{ label: "Default", value: "default" }] as const;
+
 /**
  * Merges tailwind classes together
  * @param inputs - the classes to merge
@@ -30,7 +32,7 @@ export function validateFields(
  * @returns the parsed response
  * @throws error if the response is invalid
  */
-export function processResponse(response: unknown): boolean {
+export function processResponse(response: unknown, fields: string[]): boolean {
 	if (!response || typeof response !== "object") {
 		console.error("Invalid response");
 		return false;
@@ -39,7 +41,7 @@ export function processResponse(response: unknown): boolean {
 	try {
 		const data = JSON.parse(JSON.stringify(response));
 
-		if (!validateFields(data, ["success", "title", "description", "name"])) {
+		if (!validateFields(data, fields)) {
 			console.error("Missing required fields");
 			return false;
 		}

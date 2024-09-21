@@ -1,5 +1,4 @@
 const isProd = process.env.NODE_ENV === 'production';
-
 const internalHost = process.env.TAURI_DEV_HOST || 'localhost';
 
 /**
@@ -10,7 +9,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  assetPrefix: isProd ? null : `http://${internalHost}:3000`,
+  assetPrefix: isProd ? null : undefined, // Let Next.js handle the HMR URL
 };
 
-module.exports = nextConfig
+module.exports = nextConfig;

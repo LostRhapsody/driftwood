@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 
 import Sites from "@/components/app_ui/sites";
 import CreateSite from "@/components/app_ui/create_site";
-
+import EditSite from "@/components/app_ui/edit_site";
 import LoginButton from "@/components/app_ui/login_button";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -17,6 +17,13 @@ export default function Home() {
 
   const [hasToken, setHasToken] = useState(true);
   const [currentPage, setCurrentPage] = useState("home");
+  const [currentSite, setCurrentSite] = useState("");
+
+  const handleEditSite = (site_id: string) => {
+    console.log("Site id: ", site_id );
+    setCurrentPage("edit");
+    setCurrentSite(site_id);
+  }
 
   const renderContent = () => {
     switch (currentPage) {
@@ -40,9 +47,11 @@ export default function Home() {
           </div>
         );
       case "sites":
-        return <Sites />;
+        return <Sites onEditClick={handleEditSite} />;
       case "create_site":
         return <CreateSite />;
+      case "edit":
+          return <EditSite site={currentSite} />;
       default:
         return <div>Home sweet home default</div>;
     }

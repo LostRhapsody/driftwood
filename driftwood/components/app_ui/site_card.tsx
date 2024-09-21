@@ -1,5 +1,6 @@
 import type React from 'react';
-
+import { Button } from "@/components/ui/button"
+import { open } from "@tauri-apps/plugin-shell";
 type Site = {
   name: string;
   domain: string;
@@ -7,14 +8,16 @@ type Site = {
   ssl: boolean;
   url: string;
   screenshot_url: string;
-  required: boolean;
 };
 
 type SitesListProps = {
   sites: Site[];
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  onEditClick:any;
 };
 
-const SitesList: React.FC<SitesListProps> = ({ sites }) => {
+const SitesList: React.FC<SitesListProps> = ({ sites, onEditClick }) => {
+  console.log('onEditClick site card:', onEditClick);
   return (
     <div className="w-full flex flex-wrap gap-8 justify-start">
       {sites.map((site) => (
@@ -26,10 +29,10 @@ const SitesList: React.FC<SitesListProps> = ({ sites }) => {
           />
           <div className="card__overlay">
             <h2 className="card__title">
-              <a href={site.url} className="card__link">
+              <Button onClick={() => onEditClick(site.id)} className="card__link">
                 {site.name}
-              </a>
-              <a href={`https://app.netlify.com/sites/${site.name}/deploys`}>
+              </Button>
+              <a href={`https://app.netlify.com/sites/${site.name}/deploys`} onClick={(e) => {e.preventDefault(); open(`https://app.netlify.com/sites/${site.name}/deploys`)}}>
                 <img
                   src={`https://api.netlify.com/api/v1/badges/${site.id}/deploy-status`}
                   alt="Netlify Status"
