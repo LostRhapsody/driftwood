@@ -48,10 +48,10 @@
     "windows": [
       {
         "fullscreen": false,
-        "height": 800,
+        "height": 700,
         "resizable": true,
         "title": "Driftwood",
-        "width": 1000
+        "width": 1350
       }
     ],
     "security": {

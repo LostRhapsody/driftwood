@@ -1,9 +1,18 @@
+use crate::driftwood::{NewSite, Post, SiteDetails};
 use crate::netlify::Netlify;
-use crate::driftwood::{SiteDetails, NewSite};
-use std::path::Path;
+use serde::{Deserialize, Serialize};
+use serde_json::{from_str, Value};
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
-use serde_json::{Value, from_str};
+use std::path::Path;
+
+// This is like the post struct from driftwood.rs, but
+// is strictly for serializing the json from the client.
+#[derive(Serialize, Deserialize, Debug)]
+struct PostData {
+    post_name: String,
+    post_text: String,
+}
 
 #[tauri::command]
 pub fn netlify_login() -> bool {
@@ -20,12 +29,10 @@ pub fn netlify_logout() -> bool {
     println!("Logging out");
     let token_file = Path::new("netlify_token.json");
     match token_file.exists() {
-        true => {
-            match std::fs::remove_file(token_file) {
-                Ok(_) => true,
-                Err(_) => false,
-            }
-        }
+        true => match std::fs::remove_file(token_file) {
+            Ok(_) => true,
+            Err(_) => false,
+        },
         false => false,
     }
 }
@@ -58,51 +65,48 @@ pub fn create_site(new_site: &str) -> Result<String, String> {
                 "title": "created",
                 "description": "New site created successfully! 🎉 Let's start building!",
                 "name": site_details.name,
-            }).to_string())
-        },
-        Err(err) => Err(
-            serde_json::json!({
-                "success":false,
-                "title": "Failed to create site",
-                "description": err.to_string(),
-                "name": "error",
-            }).to_string()
-        ),
+            })
+            .to_string())
+        }
+        Err(err) => Err(serde_json::json!({
+            "success":false,
+            "title": "Failed to create site",
+            "description": err.to_string(),
+            "name": "error",
+        })
+        .to_string()),
     }
-
 }
 
 #[tauri::command]
 pub fn update_site(site: &str) -> Result<String, String> {
-    println!("Creating a site");
+    println!("Updating a site");
     println!("Updated site args: {}", site);
 
     let site: SiteDetails = serde_json::from_str(site).map_err(|e| e.to_string())?;
     let netlify = Netlify::new().map_err(|e| e.to_string())?;
 
     match netlify.update_site(site.clone()) {
-        Ok(site_details) => {
-            Ok(serde_json::json!({
-                "success":true,
-                "title": "created",
-                "description": "Site updated successfully! 🎉",
-                "name": site_details.name,
-            }).to_string())
-        },
-        Err(err) => Err(
-            serde_json::json!({
-                "success":false,
-                "title": "Failed to update site",
-                "description": err.to_string(),
-                "name": "error",
-            }).to_string()
-        ),
+        Ok(site_details) => Ok(serde_json::json!({
+            "success":true,
+            "title": "updated",
+            "description": "Site updated successfully! 🎉",
+            "name": site_details.name,
+        })
+        .to_string()),
+        Err(err) => Err(serde_json::json!({
+            "success":false,
+            "title": "Failed to update site",
+            "description": err.to_string(),
+            "name": "error",
+        })
+        .to_string()),
     }
-
 }
 
 #[tauri::command]
-pub fn refresh_sites(return_site:bool) -> String {
+pub fn refresh_sites(return_site: bool) -> String {
+    println!("Refreshing sites");
     match Netlify::new() {
         Ok(netlify) => {
             println!("Netlify instance created");
@@ -121,7 +125,8 @@ pub fn refresh_sites(return_site:bool) -> String {
                 sites_json.push(site_json);
             }
 
-            let sites_json_string = serde_json::to_string(&sites_json).unwrap_or_else(|_| String::from("Failed to serialize sites"));
+            let sites_json_string = serde_json::to_string(&sites_json)
+                .unwrap_or_else(|_| String::from("Failed to serialize sites"));
             if let Err(e) = save_json_to_file("sites/sites.json", sites_json) {
                 eprintln!("Failed to save JSON to file: {}", e);
             }
@@ -132,9 +137,9 @@ pub fn refresh_sites(return_site:bool) -> String {
                     "success":true,
                     "title": "refreshed",
                     "description": "Sites refreshed",
-                }).to_string()
+                })
+                .to_string()
             }
-
         }
         Err(e) => {
             println!("Error: {:?}", e);
@@ -144,15 +149,15 @@ pub fn refresh_sites(return_site:bool) -> String {
 }
 
 #[tauri::command]
-pub fn get_site_details(site_id:String) -> String {
-
+pub fn get_site_details(site_id: String) -> String {
     println!("Getting details for site {}", site_id);
 
     // Load JSON from file
     match load_json_from_file("sites/sites.json") {
         Ok(Some(loaded_json)) => {
             println!("Loaded JSON: {}", loaded_json);
-            let site_details: Vec<SiteDetails> = serde_json::from_str(&loaded_json.to_string()).unwrap();
+            let site_details: Vec<SiteDetails> =
+                serde_json::from_str(&loaded_json.to_string()).unwrap();
             let mut sites_json: Option<Value> = None;
             for site in site_details {
                 if site.id.clone().unwrap_or_else(|| "".to_string()) == site_id {
@@ -170,13 +175,14 @@ pub fn get_site_details(site_id:String) -> String {
                 }
             }
             if let Some(ref data) = sites_json {
-                serde_json::to_string(&data).unwrap_or_else(|_| String::from("Failed to serialize sites from disk"))
+                serde_json::to_string(&data)
+                    .unwrap_or_else(|_| String::from("Failed to serialize sites from disk"))
             } else {
                 eprintln!("Could not find this site on disk.");
                 String::from("Could not find this site on disk.")
             }
         }
-        Ok(None) =>{
+        Ok(None) => {
             eprintln!("No sites or JSON on disk to load from!");
             String::from("No sites or JSON on disk to load from!")
         }
@@ -189,16 +195,16 @@ pub fn get_site_details(site_id:String) -> String {
 
 #[tauri::command]
 pub fn list_sites() -> String {
-
     println!("Listing sites");
 
     // Load JSON from file
     match load_json_from_file("sites/sites.json") {
         Ok(Some(loaded_json)) => {
             println!("Loaded JSON: {}", loaded_json);
-            serde_json::to_string(&loaded_json).unwrap_or_else(|_| String::from("Failed to serialize sites from disk"))
+            serde_json::to_string(&loaded_json)
+                .unwrap_or_else(|_| String::from("Failed to serialize sites from disk"))
         }
-        Ok(None) =>{
+        Ok(None) => {
             println!("File is empty or JSON could not be parsed.");
             match Netlify::new() {
                 Ok(netlify) => {
@@ -218,7 +224,8 @@ pub fn list_sites() -> String {
                         sites_json.push(site_json);
                     }
 
-                    let sites_json_string = serde_json::to_string(&sites_json).unwrap_or_else(|_| String::from("Failed to serialize sites"));
+                    let sites_json_string = serde_json::to_string(&sites_json)
+                        .unwrap_or_else(|_| String::from("Failed to serialize sites"));
                     if let Err(e) = save_json_to_file("sites/sites.json", sites_json) {
                         eprintln!("Failed to save JSON to file: {}", e);
                     }
@@ -228,7 +235,6 @@ pub fn list_sites() -> String {
                     println!("Error: {:?}", e);
                     String::from("Failed to login, please try again")
                 }
-
             }
         }
         Err(e) => {
@@ -236,7 +242,66 @@ pub fn list_sites() -> String {
             String::from(format!("Failed to load JSON from file: {}", e))
         }
     }
+}
 
+#[tauri::command]
+pub fn create_post(post_data: String, site_data: String) -> String {
+    println!("Create post, data: {}", post_data);
+
+    // serialize the post_data into a JSON object for interactivity.
+    let post_data: PostData = serde_json::from_str(&post_data).unwrap_or_else(|e| {
+        println!("Error deserializing: {}", e);
+        PostData {
+            post_name: "".to_string(),
+            post_text: "".to_string(),
+        }
+    });
+
+    // serialize the site_data into a JSON object for interactivity.
+    let site_data: SiteDetails = serde_json::from_str(&site_data).unwrap_or_else(|e| {
+        println!("Error deserializing: {}", e);
+        SiteDetails {
+            name: None,
+            domain: None,
+            id: None,
+            ssl: None,
+            url: None,
+            screenshot_url: None,
+            password: None,
+        }
+    });
+
+    println!("Serialized post data: {:?}", post_data);
+    println!("Serialized site data: {:?}", site_data);
+
+    // create a new post
+    // date is set automatically
+    let mut new_post = Post::new(post_data.post_name);
+
+    // strip bad chars and set post.filename
+    let _ = new_post.clean_filename();
+    // (replace "-"" with spaces basically) and set post.title
+    let _ = new_post.build_post_name();
+    // check if the site dir exists, if ont create it (sites/sitedr)
+    let _ = site_data.check_site_dir();
+    // check if the site post dir exists, if not create it (sitedir/md_posts)
+    let _ = Post::check_post_dir(&site_data);
+
+    // remove special chars and set post.tags
+    // TODO - add tags
+    let _ = new_post.clean_and_set_tags(String::new());
+
+    // write the post to disk
+    match new_post.write_post_to_disk(&site_data, post_data.post_text) {
+        Ok(_) => {
+            println!("Post written to disk.");
+            String::from("Create post successfully")
+        }
+        Err(e) => {
+            println!("Error: {}", e);
+            String::from(e.to_string())
+        }
+    }
 }
 
 /// Get all the sites for the user
@@ -262,7 +327,8 @@ fn get_sites(netlify: Netlify) -> Vec<SiteDetails> {
 /// Saves a JSON vector to disk by appending the entire vector as a single array.
 fn save_json_to_file(file_path: &str, json_data: Vec<Value>) -> Result<(), std::io::Error> {
     // Serialize the entire vector as a single JSON array
-    let serialized_json = serde_json::to_string(&json_data).unwrap_or_else(|_| String::from("Failed to serialize sites"));
+    let serialized_json = serde_json::to_string(&json_data)
+        .unwrap_or_else(|_| String::from("Failed to serialize sites"));
 
     // Open the file in append mode and create it if it doesn't exist
     let mut file = OpenOptions::new()
@@ -273,7 +339,7 @@ fn save_json_to_file(file_path: &str, json_data: Vec<Value>) -> Result<(), std::
 
     // Write the serialized JSON array to the file
     file.write_all(serialized_json.as_bytes())?;
-    file.write_all(b"\n")?;  // Optional: Add a newline at the end
+    file.write_all(b"\n")?; // Optional: Add a newline at the end
 
     Ok(())
 }

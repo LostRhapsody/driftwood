@@ -52,9 +52,10 @@ export default function Sites(onEditClick:any) {
 	}, []);
 
   const handleRefresh = async () => {
+		console.log("Refreshing sites");
 		const return_sites = true;
     try {
-      const response = await invoke<string>("refresh_sites", { return_sites });
+      const response = await invoke<string>("refresh_sites", { returnSite:return_sites });
 
       // Parse and set the site data
       const parsedData: Site[] = JSON.parse(response);
@@ -67,7 +68,7 @@ export default function Sites(onEditClick:any) {
     } catch (error) {
       toast({
         title: "Uh oh! Something went wrong.",
-        description: "There was a problem with your request.",
+        description: `Error: ${error}`,
       });
     }
   };

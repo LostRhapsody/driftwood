@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Sites from "@/components/app_ui/sites";
 import CreateSite from "@/components/app_ui/create_site";
 import EditSite from "@/components/app_ui/edit_site";
+import CreatePost from "@/components/app_ui/post";
 import LoginButton from "@/components/app_ui/login_button";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -20,8 +21,20 @@ export default function Home() {
   const [currentSite, setCurrentSite] = useState("");
 
   const handleEditSite = (site_id: string) => {
-    console.log("Site id: ", site_id );
+    console.log("Edit Site id: ", site_id );
     setCurrentPage("edit");
+    setCurrentSite(site_id);
+  }
+
+  const handleReturnClick = () => {
+    console.log("Returning to sites list");
+    setCurrentPage("sites");
+    setCurrentSite("");
+  }
+
+  const handleAddPostClick= (site_id:string) => {
+    console.log("Add post Site id: ", site_id );
+    setCurrentPage("post");
     setCurrentSite(site_id);
   }
 
@@ -51,7 +64,9 @@ export default function Home() {
       case "create_site":
         return <CreateSite />;
       case "edit":
-          return <EditSite site={currentSite} />;
+          return <EditSite site={currentSite} onReturnClick={handleReturnClick} onAddPostClick={handleAddPostClick} />;
+      case "post":
+          return <CreatePost sites={currentSite} />;
       default:
         return <div>Home sweet home default</div>;
     }

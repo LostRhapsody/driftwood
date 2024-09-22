@@ -1,28 +1,23 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-pub mod netlify;
-pub mod crypto;
 pub mod commands;
+pub mod crypto;
 pub mod driftwood;
+pub mod netlify;
 
-use dotenv::dotenv;
 use crate::commands::{
-    list_sites,
-    netlify_login,
-    netlify_logout,
-    check_token,
-    create_site,
-    refresh_sites,
-    get_site_details,
-    update_site,
+    check_token, create_site, get_site_details, list_sites, netlify_login, netlify_logout,
+    refresh_sites, update_site,create_post,
 };
+use dotenv::dotenv;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     dotenv().ok();
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
             netlify_login,
             netlify_logout,
@@ -32,6 +27,7 @@ pub fn run() {
             refresh_sites,
             get_site_details,
             update_site,
+            create_post,
         ])
         .plugin(tauri_plugin_dialog::init())
         .run(tauri::generate_context!())

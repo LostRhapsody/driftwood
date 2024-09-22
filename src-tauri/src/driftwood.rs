@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use git2::{Repository, Signature};
 use regex::Regex;
-use serde::{Serialize,Deserialize};
+use serde::{Deserialize, Serialize};
 use std::{
     env,
     error::Error,
@@ -56,7 +56,6 @@ pub struct SiteDetails {
     pub screenshot_url: Option<String>,
     pub password: Option<String>,
 }
-
 
 /// NewSite struct
 /// cotnains the settings and options for a new site
@@ -201,15 +200,18 @@ impl Post {
     /// # Arguments
     ///
     /// * `site` - A reference to the SiteDetails.
+    /// * `post_text` - A string containing the text of the post
     ///
     /// # Returns
     ///
     /// A Result indicating success or failure.
-    pub fn write_post_to_disk(&self, site: &SiteDetails) -> Result<()> {
+    pub fn write_post_to_disk(&self, site: &SiteDetails, post_text: String) -> Result<()> {
         println!("Writing post to disk: {}", self.filename);
+
         let new_posts_path = SiteDetails::build_site_path(&site)?
             .join("md_posts")
             .join(format!("{}.md", self.filename));
+
         fs::write(new_posts_path.clone(), &self.content).context("Failed to write to file.")?;
 
         // open the post file written to disk and write the title and timestamp to the file
@@ -220,18 +222,22 @@ impl Post {
             .context("Failed to open file.")?;
 
         let post_content = format!(
-            "date:{}\nexcerpt:{}\nimage:{}\ntags:{}\n# {}",
+            "date:{}\nexcerpt:{}\nimage:{}\ntags:{}\n# {}\n{}",
             self.date,
             "Write cool excerpt here",
             "https://images.unsplash.com/photo-1615147342761-9238e15d8b96?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1001&q=80",
             self.tags.join(","),
             self.title,
+            post_text,
         );
 
         file.write_all(post_content.as_bytes())
             .context("Failed to write to file.")?;
 
-        println!("Post `{}` was created successfully. Edit your new file in: {}", self.title, self.filename);
+        println!(
+            "Post `{}` was created successfully. Edit your new file in: {}",
+            self.title, self.filename
+        );
 
         Ok(())
     }
@@ -275,13 +281,12 @@ impl SiteDetails {
         }
         // create this site's specific dir
         if !site_path.exists() {
-            fs::create_dir(site_path)
-                .context("Failed to create this site's directory")?;
+            fs::create_dir(site_path).context("Failed to create this site's directory")?;
         }
         Ok(())
     }
 
-    pub fn move_favicon_to_site_dir(&self,favicon_file:String) ->  Result<()> {
+    pub fn move_favicon_to_site_dir(&self, favicon_file: String) -> Result<()> {
         // move the favicon to the site dir
         let favicon_path = favicon_file;
         let site_path = self.build_site_path()?;

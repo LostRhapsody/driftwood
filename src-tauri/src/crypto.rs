@@ -1,6 +1,8 @@
 use base64::{engine::general_purpose, Engine};
-use rsa::{pkcs8::LineEnding, Pkcs1v15Encrypt, RsaPrivateKey, RsaPublicKey, pkcs8::EncodePublicKey};
 use rand::rngs::OsRng;
+use rsa::{
+    pkcs8::EncodePublicKey, pkcs8::LineEnding, Pkcs1v15Encrypt, RsaPrivateKey, RsaPublicKey,
+};
 
 pub fn generate_key_pair() -> (RsaPrivateKey, RsaPublicKey) {
     let mut rng = OsRng;
@@ -11,11 +13,14 @@ pub fn generate_key_pair() -> (RsaPrivateKey, RsaPublicKey) {
 }
 
 pub fn get_public_key_pem(public_key: &RsaPublicKey) -> String {
-    public_key.to_public_key_pem(LineEnding::LF).expect("failed to encode public key")
+    public_key
+        .to_public_key_pem(LineEnding::LF)
+        .expect("failed to encode public key")
 }
 
 pub fn decrypt_token(encrypted_token: &str, private_key: &RsaPrivateKey) -> String {
-    let enc_data = general_purpose::STANDARD.decode(encrypted_token)
+    let enc_data = general_purpose::STANDARD
+        .decode(encrypted_token)
         .expect("failed to decode base64");
     let dec_data = private_key
         .decrypt(Pkcs1v15Encrypt, &enc_data)

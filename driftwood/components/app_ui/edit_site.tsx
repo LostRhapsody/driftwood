@@ -1,6 +1,7 @@
 "use client";
 import { useForm } from "react-hook-form";
 import { invoke } from "@tauri-apps/api/core";
+import { open } from "@tauri-apps/plugin-shell";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { processResponse } from "@/lib/utils";
@@ -10,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { ChevronLeft, SquareArrowOutUpRight, PencilLine} from "lucide-react";
 import { z } from "zod";
 
 const websiteSchema = z.object({
@@ -33,7 +35,10 @@ interface WebsiteDetails {
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-export default function EditSite(site: any) {
+export default function EditSite({ site, onReturnClick, onAddPostClick }: { site: any, onReturnClick: () => void, onAddPostClick: (site_id:string) => void }) {
+	console.log("onReturnClick: " ,onReturnClick);
+	console.log("site id: " ,site);
+
 	const { toast } = useToast();
 	const [site_details, set_site_details] = useState<WebsiteDetails>({
 		name: "",
@@ -56,7 +61,7 @@ export default function EditSite(site: any) {
 			"password",
 		];
 		const response = await invoke<string>("get_site_details", {
-			siteId: site.site,
+			siteId: site,
 		});
 
 		console.log(response);
@@ -102,8 +107,41 @@ export default function EditSite(site: any) {
 	const onSubmit = (data: WebsiteDetails) => {
 		set_site_details(data); // Update site_details with form data
 		console.log("Form Data:", data);
-		// Handle form submission (e.g., API call)
+		update_site(data);
 	};
+
+	const update_site = async (data: WebsiteDetails) => {
+		const fields = ["success","title","description","name"];
+
+		const response = await invoke<string>("update_site", {site:JSON.stringify(data)});
+
+		// validate we got a response back
+		const response_json = JSON.parse(response);
+
+		// if can't process response (shouldn't happen)
+		if (!processResponse(response_json,fields)) {
+			toast({
+				title: "Uh oh! Something went wrong.",
+				description: "There was a problem with your request.",
+			});
+			return;
+		}
+
+		const { success, title, description, name } = response_json;
+		if (success) {
+			toast({
+				title: `${name} ${title}`,
+				description: description,
+			});
+		} else {
+			toast({
+				title: title,
+				description: description,
+			});
+			console.error("Failed to update site");
+		}
+
+	}
 
 
 	const handleDelete = () => {
@@ -114,6 +152,17 @@ export default function EditSite(site: any) {
 	return (
 		<div>
 			<h1 className="text-4xl pb-2">Update {site_details.name}</h1>
+			<Button onClick={() => onAddPostClick(site_details.id)} className="w-52">
+				<PencilLine />&nbsp;Add Post
+			</Button>
+			<br />
+			<Button onClick={ () => {open(site_details.url)}} className="mt-4 w-52">
+				<SquareArrowOutUpRight />&nbsp;Visit site
+			</Button>
+			<br />
+			<Button onClick={onReturnClick} className="mt-4 w-52">
+				<ChevronLeft />&nbsp;Return to sites list
+			</Button>
 			<div className="pb-10">
 				<form
 					onSubmit={handleSubmit(onSubmit)}
