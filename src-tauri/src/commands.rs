@@ -153,7 +153,7 @@ pub fn get_site_details(site_id: String) -> String {
     println!("Getting details for site {}", site_id);
 
     // Load JSON from file
-    match load_json_from_file("sites/sites.json") {
+    match load_json_from_file() {
         Ok(Some(loaded_json)) => {
             println!("Loaded JSON: {}", loaded_json);
             let site_details: Vec<SiteDetails> =
@@ -198,7 +198,7 @@ pub fn list_sites() -> String {
     println!("Listing sites");
 
     // Load JSON from file
-    match load_json_from_file("sites/sites.json") {
+    match load_json_from_file() {
         Ok(Some(loaded_json)) => {
             println!("Loaded JSON: {}", loaded_json);
             serde_json::to_string(&loaded_json)
@@ -345,16 +345,35 @@ fn save_json_to_file(file_path: &str, json_data: Vec<Value>) -> Result<(), std::
 }
 
 /// reads a json value from disk
-fn load_json_from_file(file_path: &str) -> Result<Option<Value>, std::io::Error> {
+fn load_json_from_file() -> Result<Option<Value>, std::io::Error> {
+
+    let file_path = "./sites";
+    let file_name = "sites.json";
+    let full_path: String = format!("{}/{}", file_path, file_name);
+
+    println!("Loading JSON from file, file_path: {}/{} ", file_path, file_name);
+
     // if the path exists first and if it doesn't, create it.
     // this will trigger "contents.is_empty" and we'll retrieve it from the API
     let path = Path::new(file_path);
 
     if !path.exists() {
-        File::create(path)?;
+        println!("Path does not exist, creating.");
+        std::fs::create_dir(path)?;
+        // return here, as if the path does not exist, neither does a file that stores the sites
+        return Ok(None)
     }
 
-    let mut file = OpenOptions::new().read(true).open(file_path)?;
+    let file_name = Path::new(&full_path);
+
+    if !file_name.exists(){
+        println!("Sites file does not exist, creating.");
+        File::create(file_name)?;
+        // again if the file didn't exist, there's nothing to load.
+        return Ok(None)
+    }
+
+    let mut file = OpenOptions::new().read(true).open(file_name)?;
 
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;

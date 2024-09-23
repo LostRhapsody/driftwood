@@ -160,11 +160,15 @@ const MarkdownEditor = (site: any) => {
 
 	const [markdownText, setMarkdownText] = useState("");
 
-	const insertAtCursor = (tag: string) => {
+	const insertAtCursor= (tag: string) => {
 		const textarea = document.getElementById("textarea") as HTMLTextAreaElement;
 		const selectionStart = textarea?.selectionStart || 0;
 		const selectionEnd = textarea?.selectionEnd || 0;
 		const placeholder = markdownText.slice(selectionStart, selectionEnd);
+
+		// Store current scorll position to restore later
+		const scrollPos = textarea.scrollTop;
+
 		let updatedText = "";
 		if (tag === "**" || tag === "*" || tag === "`") {
 			updatedText = `${markdownText.slice(0, selectionStart)}${tag}${placeholder}${tag}${markdownText.slice(selectionEnd)}`;
@@ -174,7 +178,18 @@ const MarkdownEditor = (site: any) => {
 			updatedText = `${markdownText.slice(0, selectionStart)}${tag}${placeholder}${markdownText.slice(selectionEnd)}`;
 		}
 
-		setMarkdownText(updatedText);
+		// having issues with history, ctrl+z, ctrl+y, going to have to setup
+		// my own history buffer. That's fine. This doens't fix it.
+		textarea.value = updatedText;
+
+		setTimeout(() => {
+			textarea.selectionStart = selectionStart + tag.length;
+			textarea.selectionEnd = selectionEnd + tag.length;
+			// restore scroll pos
+			textarea.scrollTop = scrollPos;
+		}, 0);
+
+		// setMarkdownText(updatedText);
 	};
 
 	const toolbarButtons = [
