@@ -45,6 +45,7 @@ import {
 	Braces,
 	Link,
 	Image,
+	ChevronLeft,
 } from "lucide-react";
 
 import { useForm } from "react-hook-form";
@@ -67,7 +68,9 @@ const formSchema = z.object({
 });
 
 // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-const MarkdownEditor = (site: any) => {
+const MarkdownEditor = ( {site, onReturnClick }: {site: any, onReturnClick: (site_details:string) => void}) => {
+	console.log("site: ", site);
+	console.log("onReturnClick: ", onReturnClick);
 
   // all for getting site details from disk
 	const { toast } = useToast();
@@ -131,7 +134,7 @@ const MarkdownEditor = (site: any) => {
 			"password",
 		];
 		const response = await invoke<string>("get_site_details", {
-			siteId: site.sites,
+			siteId: site,
 		});
 
 		console.log(response);
@@ -361,6 +364,9 @@ const MarkdownEditor = (site: any) => {
       {/* Post details form */}
       <div className="w-full bg-primary rounded-xl p-2 mb-4">
         <p className="text-xl">Site: {site_details.name}</p>
+				<Button className="mt-4" variant={"outline"} onClick={() => onReturnClick(site_details.id)}>
+					<ChevronLeft />&nbsp;Return to Edit site
+				</Button>
       </div>
 
 			{/* Toolbar */}

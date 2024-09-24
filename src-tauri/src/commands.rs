@@ -121,7 +121,7 @@ pub fn refresh_sites(return_site: bool) -> String {
                     "ssl": site.ssl.unwrap_or(false),
                     "url": site.url.unwrap_or_else(|| "".to_string()),
                     "screenshot_url": site.screenshot_url.unwrap_or_else(|| "https://images.unsplash.com/photo-1615147342761-9238e15d8b96?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1001&q=80".to_string()),
-                    "required": site.required.is_some(),
+                    "required": vec![""],
                 });
                 sites_json.push(site_json);
             }
@@ -154,8 +154,22 @@ pub fn get_site_details(site_id: String) -> String {
     println!("Getting details for site {}", site_id);
 
     match get_single_site_details(site_id) {
-        Ok(result) => serde_json::to_string(&result)
-            .unwrap_or_else(|_| String::from("Failed to serialize sites from disk")),
+        Ok(result) => {
+            // TODO - get favicon from disk, otherwise this works fine
+            let favicon_file = "placeholder";
+            let site_json = serde_json::json!({
+                "name":result.name,
+                "domain":result.domain,
+                "favicon_file":favicon_file,
+                "id":result.id,
+                "ssl":result.ssl,
+                "url":result.url,
+                "screenshot_url":result.screenshot_url,
+                "password":result.password,
+
+            }).to_string();
+            site_json
+        },
         Err(err) => err,
     }
 }
@@ -187,7 +201,7 @@ pub fn list_sites() -> String {
                             "ssl": site.ssl.unwrap_or(false),
                             "url": site.url.unwrap_or_else(|| "".to_string()),
                             "screenshot_url": site.screenshot_url.unwrap_or_else(|| "https://images.unsplash.com/photo-1615147342761-9238e15d8b96?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1001&q=80".to_string()),
-                            "required": site.required.is_some(),
+                            "required": vec![""],
                         });
                         sites_json.push(site_json);
                     }
@@ -525,7 +539,7 @@ fn get_single_site_details(site_id: String) -> Result<SiteDetails, String> {
         Ok(Some(loaded_json)) => {
             println!("Loaded JSON: {}", loaded_json);
             let site_details: Vec<SiteDetails> =
-                serde_json::from_str(&loaded_json.to_string()).unwrap();
+                serde_json::from_str(&loaded_json.to_string()).expect("Could not serialize json from disk");
             let mut sites_json: Option<SiteDetails> = None;
             for site in site_details {
                 if site.id.clone().unwrap_or_else(|| "".to_string()) == site_id {

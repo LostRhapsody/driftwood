@@ -32,6 +32,12 @@ export default function Home() {
     setCurrentSite("");
   }
 
+  const handlePostReturnClick = (site_id: string) => {
+    console.log("Returning to edit site");
+    setCurrentPage("edit");
+    setCurrentSite(site_id);
+  }
+
   const handleAddPostClick= (site_id:string) => {
     console.log("Add post Site id: ", site_id );
     setCurrentPage("post");
@@ -66,7 +72,7 @@ export default function Home() {
       case "edit":
           return <EditSite site={currentSite} onReturnClick={handleReturnClick} onAddPostClick={handleAddPostClick} />;
       case "post":
-          return <CreatePost sites={currentSite} />;
+          return <CreatePost site={currentSite} onReturnClick={handlePostReturnClick} />;
       default:
         return <div>Home sweet home default</div>;
     }

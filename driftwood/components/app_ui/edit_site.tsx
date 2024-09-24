@@ -17,6 +17,7 @@ import { z } from "zod";
 const websiteSchema = z.object({
 	name: z.string().min(1, "Website name is required"),
 	domain: z.string(),
+	favicon_file: z.string(),
 	id: z.string().optional(),
 	ssl: z.boolean(),
 	url: z.string().url("Invalid URL format"),
@@ -27,6 +28,7 @@ const websiteSchema = z.object({
 interface WebsiteDetails {
 	name: string;
 	domain: string;
+	favicon_file: string;
 	id: string;
 	ssl: boolean;
 	url: string;
@@ -43,6 +45,7 @@ export default function EditSite({ site, onReturnClick, onAddPostClick }: { site
 	const [site_details, set_site_details] = useState<WebsiteDetails>({
 		name: "",
 		domain: "",
+		favicon_file: "",
 		id: "",
 		ssl: true,
 		url: "",
@@ -54,6 +57,7 @@ export default function EditSite({ site, onReturnClick, onAddPostClick }: { site
 		const fields = [
 			"name",
 			"domain",
+			"favicon_file",
 			"id",
 			"ssl",
 			"url",
@@ -228,6 +232,18 @@ export default function EditSite({ site, onReturnClick, onAddPostClick }: { site
 						/>
 						{errors.domain && (
 							<p className="text-red-500">{errors.domain.message}</p>
+						)}
+					</Card>
+
+					<Card className="edit_card">
+						<Label>Favicon</Label>
+						<Input
+							{...register("favicon_file")}
+							placeholder="Favicon.ico"
+							className="edit_input"
+						/>
+						{errors.favicon_file && (
+							<p className="text-red-500">{errors.favicon_file.message}</p>
 						)}
 					</Card>
 
