@@ -8,6 +8,7 @@ type Site = {
   ssl: boolean;
   url: string;
   screenshot_url: string;
+  required: boolean;
 };
 
 type SitesListProps = {

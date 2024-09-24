@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ChevronLeft, SquareArrowOutUpRight, PencilLine} from "lucide-react";
+import { ChevronLeft, SquareArrowOutUpRight, PencilLine, Rocket} from "lucide-react";
 import { z } from "zod";
 
 const websiteSchema = z.object({
@@ -27,7 +27,7 @@ const websiteSchema = z.object({
 interface WebsiteDetails {
 	name: string;
 	domain: string;
-	id?: string;
+	id: string;
 	ssl: boolean;
 	url: string;
 	screenshot_url?: string;
@@ -143,6 +143,40 @@ export default function EditSite({ site, onReturnClick, onAddPostClick }: { site
 
 	}
 
+	const deploy_site = async() => {
+
+		const fields = ["success","title","description"];
+
+		const response = await invoke<string>("deploy_site", {siteId:site_details.id});
+
+		// validate we got a response back
+		const response_json = JSON.parse(response);
+
+		// if can't process response (shouldn't happen)
+		if (!processResponse(response_json,fields)) {
+			toast({
+				title: "Uh oh! Something went wrong.",
+				description: "There was a problem with your request.",
+			});
+			return;
+		}
+
+		const { success, title, description, name } = response_json;
+		if (success) {
+			toast({
+				title: `${title}`,
+				description: description,
+			});
+		} else {
+			toast({
+				title: title,
+				description: description,
+			});
+			console.error("Failed to deploy site");
+		}
+
+	}
+
 
 	const handleDelete = () => {
     // Handle delete action
@@ -152,17 +186,22 @@ export default function EditSite({ site, onReturnClick, onAddPostClick }: { site
 	return (
 		<div>
 			<h1 className="text-4xl pb-2">Update {site_details.name}</h1>
+			<div className="flex flex-row gap-8">
 			<Button onClick={() => onAddPostClick(site_details.id)} className="w-52">
 				<PencilLine />&nbsp;Add Post
 			</Button>
-			<br />
+			<Button variant={"success"} onClick={deploy_site} className="w-52">
+				<Rocket />&nbsp;Deploy site
+			</Button>
+			</div>
+			<div className="flex flex-row gap-8">
 			<Button onClick={ () => {open(site_details.url)}} className="mt-4 w-52">
 				<SquareArrowOutUpRight />&nbsp;Visit site
 			</Button>
-			<br />
 			<Button onClick={onReturnClick} className="mt-4 w-52">
 				<ChevronLeft />&nbsp;Return to sites list
 			</Button>
+			</div>
 			<div className="pb-10">
 				<form
 					onSubmit={handleSubmit(onSubmit)}
@@ -213,7 +252,7 @@ export default function EditSite({ site, onReturnClick, onAddPostClick }: { site
 							<img
 								src={site_details.screenshot_url}
 								alt="Website Screenshot"
-								className="w-full h-48 object-cover rounded-lg mb-4"
+								className="w-full h-full object-cover rounded-lg mb-4"
 							/>
 						) : (
 							<Input
@@ -244,11 +283,9 @@ export default function EditSite({ site, onReturnClick, onAddPostClick }: { site
 						<Button type="submit" className="edit_button edit_save">
 							Save Changes
 						</Button>
-						<div className="edit_alert">
-							<Button type="button" className="edit_button edit_delete" onClick={handleDelete}>
-								Delete
-							</Button>
-						</div>
+						<Button type="button" className="edit_button edit_delete" onClick={handleDelete}>
+							Delete
+						</Button>
 					</div>
 				</form>
 			</div>

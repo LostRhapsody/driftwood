@@ -8,7 +8,7 @@ pub mod netlify;
 
 use crate::commands::{
     check_token, create_site, get_site_details, list_sites, netlify_login, netlify_logout,
-    refresh_sites, update_site,create_post,
+    refresh_sites, update_site,create_post, deploy_site,
 };
 use dotenv::dotenv;
 
@@ -28,6 +28,7 @@ pub fn run() {
             get_site_details,
             update_site,
             create_post,
+            deploy_site,
         ])
         .plugin(tauri_plugin_dialog::init())
         .run(tauri::generate_context!())

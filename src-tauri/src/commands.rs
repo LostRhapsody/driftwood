@@ -1,4 +1,4 @@
-use crate::driftwood::{NewSite, Post, SiteDetails};
+use crate::driftwood::{NewSite, Post, SiteDetails, read_and_parse,template_html};
 use crate::netlify::Netlify;
 use serde::{Deserialize, Serialize};
 use serde_json::{from_str, Value};
@@ -121,6 +121,7 @@ pub fn refresh_sites(return_site: bool) -> String {
                     "ssl": site.ssl.unwrap_or(false),
                     "url": site.url.unwrap_or_else(|| "".to_string()),
                     "screenshot_url": site.screenshot_url.unwrap_or_else(|| "https://images.unsplash.com/photo-1615147342761-9238e15d8b96?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1001&q=80".to_string()),
+                    "required": site.required.is_some(),
                 });
                 sites_json.push(site_json);
             }
@@ -152,44 +153,10 @@ pub fn refresh_sites(return_site: bool) -> String {
 pub fn get_site_details(site_id: String) -> String {
     println!("Getting details for site {}", site_id);
 
-    // Load JSON from file
-    match load_json_from_file() {
-        Ok(Some(loaded_json)) => {
-            println!("Loaded JSON: {}", loaded_json);
-            let site_details: Vec<SiteDetails> =
-                serde_json::from_str(&loaded_json.to_string()).unwrap();
-            let mut sites_json: Option<Value> = None;
-            for site in site_details {
-                if site.id.clone().unwrap_or_else(|| "".to_string()) == site_id {
-                    let site_json = serde_json::json!({
-                        "name": site.name.unwrap_or_else(|| "".to_string()),
-                        "domain": site.domain.unwrap_or_else(|| "".to_string()),
-                        "id": site.id.unwrap_or_else(|| "".to_string()),
-                        "ssl": site.ssl.unwrap_or(false),
-                        "url": site.url.unwrap_or_else(|| "".to_string()),
-                        "screenshot_url": site.screenshot_url.unwrap_or_else(|| "https://images.unsplash.com/photo-1615147342761-9238e15d8b96?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1001&q=80".to_string()),
-                        "password": site.password.unwrap_or_else(|| "".to_string()),
-                    });
-                    sites_json = Some(site_json);
-                    break;
-                }
-            }
-            if let Some(ref data) = sites_json {
-                serde_json::to_string(&data)
-                    .unwrap_or_else(|_| String::from("Failed to serialize sites from disk"))
-            } else {
-                eprintln!("Could not find this site on disk.");
-                String::from("Could not find this site on disk.")
-            }
-        }
-        Ok(None) => {
-            eprintln!("No sites or JSON on disk to load from!");
-            String::from("No sites or JSON on disk to load from!")
-        }
-        Err(e) => {
-            eprintln!("Failed to load JSON from file: {}", e);
-            String::from(format!("Failed to load JSON from file: {}", e))
-        }
+    match get_single_site_details(site_id) {
+        Ok(result) => serde_json::to_string(&result)
+            .unwrap_or_else(|_| String::from("Failed to serialize sites from disk")),
+        Err(err) => err,
     }
 }
 
@@ -220,6 +187,7 @@ pub fn list_sites() -> String {
                             "ssl": site.ssl.unwrap_or(false),
                             "url": site.url.unwrap_or_else(|| "".to_string()),
                             "screenshot_url": site.screenshot_url.unwrap_or_else(|| "https://images.unsplash.com/photo-1615147342761-9238e15d8b96?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1001&q=80".to_string()),
+                            "required": site.required.is_some(),
                         });
                         sites_json.push(site_json);
                     }
@@ -268,6 +236,7 @@ pub fn create_post(post_data: String, site_data: String) -> String {
             url: None,
             screenshot_url: None,
             password: None,
+            required: None,
         }
     });
 
@@ -301,6 +270,168 @@ pub fn create_post(post_data: String, site_data: String) -> String {
             println!("Error: {}", e);
             String::from(e.to_string())
         }
+    }
+}
+
+#[tauri::command]
+pub fn deploy_site(site_id: String) -> String {
+    match Netlify::new() {
+        Ok(netlify) => {
+
+            let site = get_single_site_details(site_id).expect("Failed to load site details");
+            // first loop through the site's posts and convert them to HTML
+            let site_path = SiteDetails::build_site_path(&site).expect("Failed to build site path");
+            // convert site_path PathBuf to string
+            let site_path = site_path.to_string_lossy().to_string();
+            let post_path = format!("{}/md_posts", site_path);
+            let html_post_path = format!("{}/posts", site_path);
+
+            // lol bad names... it's the PATH types of these string paths
+            let post_path_path = Path::new(&post_path);
+            let html_post_path_path = Path::new(&html_post_path);
+            if !post_path_path.exists() {
+                std::fs::create_dir(post_path_path)
+                    .expect("Failed to create this site's 'md_posts' directory");
+            }
+            if !html_post_path_path.exists() {
+                std::fs::create_dir(html_post_path_path)
+                    .expect("Failed to create this site's 'md_posts' directory");
+            }
+
+            let mut html_file_names = vec![];
+
+            // loop through md posts
+            for entry in std::fs::read_dir(post_path).unwrap() {
+                // md filename
+                let entry = entry.unwrap();
+                println!("> {:?}", entry.file_name().to_string_lossy());
+                // full path to md file
+                let md_file_name = entry.path();
+                println!("> {:?}", md_file_name);
+                // full path to html file
+                let html_file_name = format!(
+                    "{}/posts/{}.html",
+                    site_path,
+                    entry.file_name().to_string_lossy()
+                );
+                println!("> {:?}", html_file_name);
+
+                if md_file_name.is_file() {
+                    let md_file_name = md_file_name.to_string_lossy();
+                    // let html_file_name = html_file_name.file_name().unwrap().to_string_lossy().into_owned();
+                    // convert to html
+                    let success = read_and_parse(&md_file_name, &html_file_name);
+                    match success {
+                        Ok(_) => {
+                            println!("Successfully converted markdown to HTML.");
+                            // add this html file name to a vector of strings
+                            html_file_names.push(html_file_name);
+                        }
+                        Err(e) => {
+                            println!("Failed to convert markdown to HTML.");
+                            println!("Error: {:?}", e);
+                        }
+                    }
+                }
+            }
+
+            // remove any dashes or underscores from the site name, replace with spaces
+            let clean_site_name = site
+                .name
+                .clone()
+                .unwrap()
+                .replace("-", " ")
+                .replace("_", " ");
+            let template_success =
+                template_html(html_file_names, site_path.clone(), clean_site_name);
+            match template_success {
+                Ok(_) => {
+                    println!("Successfully templated blog links.");
+                }
+                Err(e) => {
+                    println!("Failed to template blog links.");
+                    println!("Error: {:?}", e);
+                }
+            }
+
+            // second generate the sha1 hash of all the html files
+            let post_path = format!("{}/posts", site_path);
+
+            let site_path = Path::new(&site_path);
+            let post_path = Path::new(&post_path);
+
+            let sha1_result = Netlify::generate_sha1_for_posts(site_path, post_path);
+
+            if sha1_result.is_ok() {
+                println!("> SHA1 hash generated successfully.");
+            } else {
+                let sha_error = sha1_result.err().unwrap();
+                println!("> Error: {}", sha_error);
+                return serde_json::json!({
+                    "success":false,
+                    "title": "Failed to deploy site",
+                    "description": format!("Error: {}", sha_error),
+                })
+                .to_string()
+            }
+
+            // unwrap the result to get the FileHashes struct
+            let sha1_hashmap = sha1_result.unwrap();
+
+            // post the file hashes to netlify
+            let new_site = netlify.send_file_checksums(site.clone(), &sha1_hashmap);
+
+            // make sure you don't overlap "site" and "new site"
+            // site is the og site details, new site is the deploy details + site details
+            // the id will overlap
+            match new_site {
+                Ok(new_site) => {
+                    println!(">Site Details:");
+                    println!("{:?}", new_site);
+
+                    // loop over the site's required vector (unwrap to get outside the option)
+                    new_site.required.unwrap().iter().for_each(|file| {
+                        println!("> Required file: {:?}", file);
+
+                        // loop through our hashmap of file hashes
+                        sha1_hashmap.files.iter().for_each(|file_hash| {
+                            // destructure the tuple (apparently iterating through hashmaps gives you tuples)
+                            let (current_file_name, current_file_hash) = file_hash;
+                            // if they match, print
+                            if file == current_file_hash {
+                                println!("> Matching File hash: {:?}", file_hash);
+                                let response = netlify.upload_file(
+                                    site.name.clone().unwrap(),
+                                    site.id.clone().unwrap(),
+                                    new_site.id.clone().unwrap(),
+                                    Path::new(current_file_name),
+                                );
+                                match response {
+                                    Ok(_) => {
+                                        println!("> File uploaded successfully.");
+                                    }
+                                    Err(e) => {
+                                        println!("> Error: {:?}", e);
+                                    }
+                                }
+                            }
+                        });
+                    });
+                }
+                Err(e) => {
+                    println!("Error: {:?}", e);
+                }
+            }
+
+            serde_json::json!({
+                "success":true,
+                "title": "Site deployed 🚀",
+                "description": "Finished deploying site!",
+            })
+            .to_string()
+
+        }
+        Err(e) => e.to_string()
     }
 }
 
@@ -346,12 +477,14 @@ fn save_json_to_file(file_path: &str, json_data: Vec<Value>) -> Result<(), std::
 
 /// reads a json value from disk
 fn load_json_from_file() -> Result<Option<Value>, std::io::Error> {
-
     let file_path = "./sites";
     let file_name = "sites.json";
     let full_path: String = format!("{}/{}", file_path, file_name);
 
-    println!("Loading JSON from file, file_path: {}/{} ", file_path, file_name);
+    println!(
+        "Loading JSON from file, file_path: {}/{} ",
+        file_path, file_name
+    );
 
     // if the path exists first and if it doesn't, create it.
     // this will trigger "contents.is_empty" and we'll retrieve it from the API
@@ -361,16 +494,16 @@ fn load_json_from_file() -> Result<Option<Value>, std::io::Error> {
         println!("Path does not exist, creating.");
         std::fs::create_dir(path)?;
         // return here, as if the path does not exist, neither does a file that stores the sites
-        return Ok(None)
+        return Ok(None);
     }
 
     let file_name = Path::new(&full_path);
 
-    if !file_name.exists(){
+    if !file_name.exists() {
         println!("Sites file does not exist, creating.");
         File::create(file_name)?;
         // again if the file didn't exist, there's nothing to load.
-        return Ok(None)
+        return Ok(None);
     }
 
     let mut file = OpenOptions::new().read(true).open(file_name)?;
@@ -383,5 +516,40 @@ fn load_json_from_file() -> Result<Option<Value>, std::io::Error> {
         Ok(Some(json_data))
     } else {
         Ok(None)
+    }
+}
+
+fn get_single_site_details(site_id: String) -> Result<SiteDetails, String> {
+    // Load JSON from file
+    match load_json_from_file() {
+        Ok(Some(loaded_json)) => {
+            println!("Loaded JSON: {}", loaded_json);
+            let site_details: Vec<SiteDetails> =
+                serde_json::from_str(&loaded_json.to_string()).unwrap();
+            let mut sites_json: Option<SiteDetails> = None;
+            for site in site_details {
+                if site.id.clone().unwrap_or_else(|| "".to_string()) == site_id {
+                    sites_json = Some(site);
+                    break;
+                }
+            }
+            if let Some(ref data) = sites_json {
+                Ok(data.clone())
+            } else {
+                eprintln!("Could not find this site on disk.");
+                Err(String::from("Could not find this site on disk."))
+            }
+        }
+        Ok(None) => {
+            eprintln!("No sites or JSON on disk to load from!");
+            Err(String::from("No sites or JSON on disk to load from!"))
+        }
+        Err(e) => {
+            eprintln!("Failed to load JSON from file: {}", e);
+            Err(String::from(format!(
+                "Failed to load JSON from file: {}",
+                e
+            )))
+        }
     }
 }

@@ -55,6 +55,7 @@ pub struct SiteDetails {
     pub url: Option<String>,
     pub screenshot_url: Option<String>,
     pub password: Option<String>,
+    pub required: Option<Vec<String>>,
 }
 
 /// NewSite struct
@@ -299,7 +300,7 @@ impl SiteDetails {
         Ok(())
     }
 
-    pub fn eck_for_site_repo(&self) -> Result<bool> {
+    pub fn check_for_site_repo(&self) -> Result<bool> {
         let repo_path = SiteDetails::build_site_path(self)?;
         let repo = Repository::open(repo_path);
         Ok(repo.is_ok())

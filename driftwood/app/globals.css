@@ -46,6 +46,8 @@ body {
 		--destructive-foreground: 0 0% 98%;
 		--warning: 38 92% 50%;
 		--warning-foreground: 48 96% 89%;
+		--success: 120, 100%, 35%;
+		--success-foreground: 120, 100%, 95%;
 
 		--border: 240 5.9% 90%;
 		--input: 240 5.9% 90%;
@@ -81,6 +83,9 @@ body {
 		--destructive-foreground: 0 0% 98%;
 		--warning: 48 96% 89%;
 		--warning-foreground: 38 92% 50%;
+		--success: 120, 50%, 25%;
+		--success-foreground:120, 100%, 90%;
+
 		--border: 240 3.7% 15.9%;
 		--input: 240 3.7% 15.9%;
 		--ring: 240 4.9% 83.9%;
