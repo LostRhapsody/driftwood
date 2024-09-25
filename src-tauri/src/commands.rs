@@ -1,4 +1,4 @@
-use crate::driftwood::{NewSite, Post, SiteDetails, read_and_parse,template_html};
+use crate::driftwood::{read_and_parse, template_html, NewSite, Post, SiteDetails};
 use crate::netlify::Netlify;
 use serde::{Deserialize, Serialize};
 use serde_json::{from_str, Value};
@@ -57,9 +57,7 @@ pub fn create_site(new_site: &str) -> Result<String, String> {
 
     match netlify.create_site(site.clone()) {
         Ok(site_details) => {
-            if site.password_enabled {
-                println!("Password not yet implemented.");
-            }
+            refresh_sites(false);
             Ok(serde_json::json!({
                 "success":true,
                 "title": "created",
@@ -67,7 +65,7 @@ pub fn create_site(new_site: &str) -> Result<String, String> {
                 "name": site_details.name,
             })
             .to_string())
-        }
+        },
         Err(err) => Err(serde_json::json!({
             "success":false,
             "title": "Failed to create site",
@@ -87,13 +85,20 @@ pub fn update_site(site: &str) -> Result<String, String> {
     let netlify = Netlify::new().map_err(|e| e.to_string())?;
 
     match netlify.update_site(site.clone()) {
-        Ok(site_details) => Ok(serde_json::json!({
-            "success":true,
-            "title": "updated",
-            "description": "Site updated successfully! 🎉",
-            "name": site_details.name,
-        })
-        .to_string()),
+        Ok(site_details) => {
+            refresh_sites(false);
+            let favicon = site.clone().favicon_file.unwrap_or_default();
+            if favicon != "" {
+                site.move_favicon_to_site_dir(favicon).expect("Tried moving new favicon file, failed.");
+            }
+            Ok(serde_json::json!({
+                "success":true,
+                "title": "updated",
+                "description": "Site updated successfully! 🎉",
+                "name": site_details.name,
+            })
+            .to_string())
+        },
         Err(err) => Err(serde_json::json!({
             "success":false,
             "title": "Failed to update site",
@@ -155,21 +160,51 @@ pub fn get_site_details(site_id: String) -> String {
 
     match get_single_site_details(site_id) {
         Ok(result) => {
-            // TODO - get favicon from disk, otherwise this works fine
-            let favicon_file = "placeholder";
+            println!("Returning site details and favicon path");
+
+            let file_path = "./sites";
+            let file_name = "favicon.ico";
+            let full_path: String = format!(
+                "{}/{}/{}",
+                file_path,
+                result.id.clone().unwrap_or_default(),
+                file_name
+            );
+
+            println!(
+                "Loading favicon from file, full_path: {} ",
+                full_path
+            );
+
+            // if the path exists first and if it doesn't, create it.
+            // this will trigger "contents.is_empty" and we'll retrieve it from the API
+            let path = Path::new(file_path);
+
+            let mut favicon = String::new();
+
+            if path.exists() {
+                println!("path exists");
+                let file_name = Path::new(&full_path);
+                if file_name.exists() {
+                    println!("full path exists");
+                    favicon = full_path;
+                }
+            }
+
             let site_json = serde_json::json!({
                 "name":result.name,
                 "domain":result.domain,
-                "favicon_file":favicon_file,
+                "favicon_file": favicon,
                 "id":result.id,
                 "ssl":result.ssl,
                 "url":result.url,
                 "screenshot_url":result.screenshot_url,
                 "password":result.password,
 
-            }).to_string();
+            })
+            .to_string();
             site_json
-        },
+        }
         Err(err) => err,
     }
 }
@@ -251,6 +286,7 @@ pub fn create_post(post_data: String, site_data: String) -> String {
             screenshot_url: None,
             password: None,
             required: None,
+            favicon_file: None,
         }
     });
 
@@ -291,7 +327,6 @@ pub fn create_post(post_data: String, site_data: String) -> String {
 pub fn deploy_site(site_id: String) -> String {
     match Netlify::new() {
         Ok(netlify) => {
-
             let site = get_single_site_details(site_id).expect("Failed to load site details");
             // first loop through the site's posts and convert them to HTML
             let site_path = SiteDetails::build_site_path(&site).expect("Failed to build site path");
@@ -386,7 +421,7 @@ pub fn deploy_site(site_id: String) -> String {
                     "title": "Failed to deploy site",
                     "description": format!("Error: {}", sha_error),
                 })
-                .to_string()
+                .to_string();
             }
 
             // unwrap the result to get the FileHashes struct
@@ -415,7 +450,6 @@ pub fn deploy_site(site_id: String) -> String {
                             if file == current_file_hash {
                                 println!("> Matching File hash: {:?}", file_hash);
                                 let response = netlify.upload_file(
-                                    site.name.clone().unwrap(),
                                     site.id.clone().unwrap(),
                                     new_site.id.clone().unwrap(),
                                     Path::new(current_file_name),
@@ -443,9 +477,8 @@ pub fn deploy_site(site_id: String) -> String {
                 "description": "Finished deploying site!",
             })
             .to_string()
-
         }
-        Err(e) => e.to_string()
+        Err(e) => e.to_string(),
     }
 }
 
@@ -538,8 +571,8 @@ fn get_single_site_details(site_id: String) -> Result<SiteDetails, String> {
     match load_json_from_file() {
         Ok(Some(loaded_json)) => {
             println!("Loaded JSON: {}", loaded_json);
-            let site_details: Vec<SiteDetails> =
-                serde_json::from_str(&loaded_json.to_string()).expect("Could not serialize json from disk");
+            let site_details: Vec<SiteDetails> = serde_json::from_str(&loaded_json.to_string())
+                .expect("Could not serialize json from disk");
             let mut sites_json: Option<SiteDetails> = None;
             for site in site_details {
                 if site.id.clone().unwrap_or_else(|| "".to_string()) == site_id {

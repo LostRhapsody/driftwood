@@ -11,18 +11,24 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ChevronLeft, SquareArrowOutUpRight, PencilLine, Rocket} from "lucide-react";
+import {
+	ChevronLeft,
+	SquareArrowOutUpRight,
+	PencilLine,
+	Rocket,
+} from "lucide-react";
 import { z } from "zod";
+import openFilePicker from "@/lib/file_picker";
 
 const websiteSchema = z.object({
-	name: z.string().min(1, "Website name is required"),
+	site_name: z.string().min(1).max(37).regex(/^[a-zA-Z0-9-]+$/, "Only letters, numbers, and dashes are allowed"),
 	domain: z.string(),
 	favicon_file: z.string(),
 	id: z.string().optional(),
 	ssl: z.boolean(),
 	url: z.string().url("Invalid URL format"),
 	screenshot_url: z.string().url("Invalid screenshot URL format").optional(),
-	password: z.string(),
+	// password: z.string(),
 });
 
 interface WebsiteDetails {
@@ -33,13 +39,21 @@ interface WebsiteDetails {
 	ssl: boolean;
 	url: string;
 	screenshot_url?: string;
-	password: string;
+	// password: string;
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-export default function EditSite({ site, onReturnClick, onAddPostClick }: { site: any, onReturnClick: () => void, onAddPostClick: (site_id:string) => void }) {
-	console.log("onReturnClick: " ,onReturnClick);
-	console.log("site id: " ,site);
+export default function EditSite({
+	site,
+	onReturnClick,
+	onAddPostClick,
+}: {
+	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+	site: any;
+	onReturnClick: () => void;
+	onAddPostClick: (site_id: string) => void;
+}) {
+	console.log("onReturnClick: ", onReturnClick);
+	console.log("site id: ", site);
 
 	const { toast } = useToast();
 	const [site_details, set_site_details] = useState<WebsiteDetails>({
@@ -50,7 +64,7 @@ export default function EditSite({ site, onReturnClick, onAddPostClick }: { site
 		ssl: true,
 		url: "",
 		screenshot_url: "",
-		password: "",
+		// password: "",
 	});
 
 	async function get_site_details() {
@@ -94,6 +108,7 @@ export default function EditSite({ site, onReturnClick, onAddPostClick }: { site
 
 	const {
 		register,
+		setValue,
 		handleSubmit,
 		formState: { errors },
 		reset, // Add reset function from useForm
@@ -104,9 +119,8 @@ export default function EditSite({ site, onReturnClick, onAddPostClick }: { site
 
 	// Effect to reset form when site_details is updated
 	useEffect(() => {
-		reset(site_details);  // Reset form fields when site_details changes
+		reset(site_details); // Reset form fields when site_details changes
 	}, [site_details, reset]);
-
 
 	const onSubmit = (data: WebsiteDetails) => {
 		set_site_details(data); // Update site_details with form data
@@ -115,15 +129,17 @@ export default function EditSite({ site, onReturnClick, onAddPostClick }: { site
 	};
 
 	const update_site = async (data: WebsiteDetails) => {
-		const fields = ["success","title","description","name"];
+		const fields = ["success", "title", "description", "name"];
 
-		const response = await invoke<string>("update_site", {site:JSON.stringify(data)});
+		const response = await invoke<string>("update_site", {
+			site: JSON.stringify(data),
+		});
 
 		// validate we got a response back
 		const response_json = JSON.parse(response);
 
 		// if can't process response (shouldn't happen)
-		if (!processResponse(response_json,fields)) {
+		if (!processResponse(response_json, fields)) {
 			toast({
 				title: "Uh oh! Something went wrong.",
 				description: "There was a problem with your request.",
@@ -144,20 +160,20 @@ export default function EditSite({ site, onReturnClick, onAddPostClick }: { site
 			});
 			console.error("Failed to update site");
 		}
+	};
 
-	}
+	const deploy_site = async () => {
+		const fields = ["success", "title", "description"];
 
-	const deploy_site = async() => {
-
-		const fields = ["success","title","description"];
-
-		const response = await invoke<string>("deploy_site", {siteId:site_details.id});
+		const response = await invoke<string>("deploy_site", {
+			siteId: site_details.id,
+		});
 
 		// validate we got a response back
 		const response_json = JSON.parse(response);
 
 		// if can't process response (shouldn't happen)
-		if (!processResponse(response_json,fields)) {
+		if (!processResponse(response_json, fields)) {
 			toast({
 				title: "Uh oh! Something went wrong.",
 				description: "There was a problem with your request.",
@@ -178,33 +194,44 @@ export default function EditSite({ site, onReturnClick, onAddPostClick }: { site
 			});
 			console.error("Failed to deploy site");
 		}
-
-	}
-
+	};
 
 	const handleDelete = () => {
-    // Handle delete action
-    alert('Are you sure you want to delete this website?');
-  };
+		// Handle delete action
+		alert("Not yet supported, please visit Netlify to delete this site.");
+	};
 
 	return (
 		<div>
 			<h1 className="text-4xl pb-2">Update {site_details.name}</h1>
+			<h2 className="text-xl py-2">Site ID: {site_details.id}</h2>
 			<div className="flex flex-row gap-8">
-			<Button onClick={() => onAddPostClick(site_details.id)} className="w-52">
-				<PencilLine />&nbsp;Add Post
-			</Button>
-			<Button variant={"success"} onClick={deploy_site} className="w-52">
-				<Rocket />&nbsp;Deploy site
-			</Button>
+				<Button
+					onClick={() => onAddPostClick(site_details.id)}
+					className="w-52"
+				>
+					<PencilLine />
+					&nbsp;Add Post
+				</Button>
+				<Button variant={"success"} onClick={deploy_site} className="w-52">
+					<Rocket />
+					&nbsp;Deploy site
+				</Button>
 			</div>
 			<div className="flex flex-row gap-8">
-			<Button onClick={ () => {open(site_details.url)}} className="mt-4 w-52">
-				<SquareArrowOutUpRight />&nbsp;Visit site
-			</Button>
-			<Button onClick={onReturnClick} className="mt-4 w-52">
-				<ChevronLeft />&nbsp;Return to sites list
-			</Button>
+				<Button
+					onClick={() => {
+						open(site_details.url);
+					}}
+					className="mt-4 w-52"
+				>
+					<SquareArrowOutUpRight />
+					&nbsp;Visit site
+				</Button>
+				<Button onClick={onReturnClick} className="mt-4 w-52">
+					<ChevronLeft />
+					&nbsp;Return to sites list
+				</Button>
 			</div>
 			<div className="pb-10">
 				<form
@@ -238,6 +265,7 @@ export default function EditSite({ site, onReturnClick, onAddPostClick }: { site
 					<Card className="edit_card">
 						<Label>Favicon</Label>
 						<Input
+							id="favicon_file"
 							{...register("favicon_file")}
 							placeholder="Favicon.ico"
 							className="edit_input"
@@ -245,10 +273,23 @@ export default function EditSite({ site, onReturnClick, onAddPostClick }: { site
 						{errors.favicon_file && (
 							<p className="text-red-500">{errors.favicon_file.message}</p>
 						)}
+						<Button
+							className="mt-4"
+							onClick={async (e) => {
+								e.preventDefault();
+								const filePath = await openFilePicker();
+								if (filePath) {
+									setValue("favicon_file", filePath);
+								}
+							}}
+						>
+							Upload File
+						</Button>
 					</Card>
 
 					<Card className="edit_card">
-						<Label>SSL Enabled</Label><br />
+						<Label>SSL Enabled</Label>
+						<br />
 						<Checkbox {...register("ssl")} />
 					</Card>
 
@@ -282,7 +323,7 @@ export default function EditSite({ site, onReturnClick, onAddPostClick }: { site
 						)}
 					</Card>
 
-					<Card className="edit_card">
+					{/* <Card className="edit_card">
 						<Label>Password</Label>
 						<Input
 							type="password"
@@ -293,13 +334,17 @@ export default function EditSite({ site, onReturnClick, onAddPostClick }: { site
 						{errors.password && (
 							<p className="text-red-500">{errors.password.message}</p>
 						)}
-					</Card>
+					</Card> */}
 
 					<div className="flex justify-between">
 						<Button type="submit" className="edit_button edit_save">
 							Save Changes
 						</Button>
-						<Button type="button" className="edit_button edit_delete" onClick={handleDelete}>
+						<Button
+							type="button"
+							className="edit_button edit_delete"
+							onClick={handleDelete}
+						>
 							Delete
 						</Button>
 					</div>

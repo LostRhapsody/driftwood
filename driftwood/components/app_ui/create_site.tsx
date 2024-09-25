@@ -52,7 +52,7 @@ import openFilePicker from "@/lib/file_picker";
 
 // create site for schema
 const formSchema = z.object({
-	site_name: z.string().min(1).max(37),
+	site_name: z.string().min(1).max(37).regex(/^[a-zA-Z0-9-]+$/, "Only letters, numbers, and dashes are allowed"),
 	custom_domain: z.string().max(253),
 	favicon_file: z.string(),
 	template: z.string().min(1),
@@ -263,7 +263,7 @@ export default function CreateSite() {
 										Upload File
 									</Button>
 									<FormDescription>
-										The favicon (little icon that goes in the browser&amp;s tab)
+										The favicon (little icon that goes in the browser's tab)
 										for your site.
 										<br />
 										<a

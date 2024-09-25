@@ -267,8 +267,6 @@ impl Netlify {
 
     pub fn upload_file(
         &self,
-        // site_details: SiteDetails,
-        site_name: String,
         site_id: String,
         deploy_id: String,
         file_path: &Path,
@@ -290,11 +288,11 @@ impl Netlify {
         // if the file is /index.html, full path will be sitename_siteid/index.html
         if file_path.to_string_lossy() == "/index.html" {
             println!("> File is index.html");
-            full_path_str = format!("sites/{}_{}/index.html", site_name, site_id);
+            full_path_str = format!("sites/{}/index.html", site_id);
             full_path = Path::new(&full_path_str);
         } else {
             println!("> File is not index.html");
-            full_path_str = format!("sites/{}_{}{}", site_name, site_id, file_path.display());
+            full_path_str = format!("sites/{}{}", site_id, file_path.display());
             full_path = Path::new(&full_path_str);
         }
 
@@ -535,6 +533,7 @@ impl Netlify {
                             println!("> Request failed: {}", json);
                             let error_message = json["errors"]["subdomain"][0]
                                 .as_str()
+                                .or_else(|| json["errors"]["custom_domain"][0].as_str())
                                 .or_else(|| json["message"].as_str())
                                 .or_else(|| json["code"].as_str())
                                 .unwrap_or("Unable to extract error message");
@@ -593,6 +592,19 @@ impl Netlify {
             .files
             .insert("/index.html".to_string(), sha1.digest().to_string());
         sha1.reset();
+
+        // if the favicon.ico file exists, hash that as well.
+        if Path::new(&format!("{}/favicon.ico", site_path.display())).exists() {
+            println!("favicon file exists, hashing");
+            // first grab the hash for /site/index.html
+            let favicon_file = fs::read(format!("{}/favicon.ico", site_path.display()))?;
+
+            sha1.update(&favicon_file);
+            file_hashes
+                .files
+                .insert("/favicon.ico".to_string(), sha1.digest().to_string());
+            sha1.reset();
+        }
 
         // loop through the files in this dir
         for entry in fs::read_dir(posts_dir)? {

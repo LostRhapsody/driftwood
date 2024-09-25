@@ -56,6 +56,7 @@ pub struct SiteDetails {
     pub screenshot_url: Option<String>,
     pub password: Option<String>,
     pub required: Option<Vec<String>>,
+    pub favicon_file: Option<String> // only used when updating the site from UI, not sent to Netlify
 }
 
 /// NewSite struct
@@ -259,8 +260,7 @@ impl Post {
 impl SiteDetails {
     pub fn build_site_path(&self) -> Result<PathBuf> {
         let site_path = PathBuf::from(format!(
-            "sites/{}_{}",
-            self.name.clone().unwrap(),
+            "sites/{}",
             self.id.clone().unwrap()
         ));
         Ok(site_path)
