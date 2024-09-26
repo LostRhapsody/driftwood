@@ -6,10 +6,8 @@ use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
 use std::path::Path;
 
-/// TODO create a list posts command to list all the posts for a site
-/// let _ = load_posts_from_disk(String::from("182b3e43-cf56-4f20-bb44-45a9e7b42b0a"));
 /// TODO clone and refactor load_posts_from_disk to load_post_from_disk, iterate through dir, don't read through the files until a specific file is found
-/// TODO list the posts in the client and load post data into the edit post screen
+/// TODO client now receives an array of posts from disk, need a component and new screen to list them
 /// TODO in edit post screen, add field for image, and create a way to extract an excerpt from the post's contents.
 
 // This is like the post struct from driftwood.rs, but
@@ -488,6 +486,19 @@ pub fn deploy_site(site_id: String) -> String {
     }
 }
 
+#[tauri::command]
+pub fn get_post_list(site_id:String) -> Result<String, String> {
+    let posts = load_posts_from_disk(site_id);
+    match posts {
+        Ok(posts) => Ok(serde_json::to_string(&posts).expect("Attempted to serialize vector of posts.")),
+        Err(err) => Err(serde_json::json!({
+            "success":false,
+            "title":"Could not find any posts for this site",
+            "description":err.to_string()
+        }).to_string())
+    }
+}
+
 /// Get all the sites for the user
 /// netlify: A Netlify instance
 /// Returns a vector of SiteDetails
@@ -608,10 +619,18 @@ fn get_single_site_details(site_id: String) -> Result<SiteDetails, String> {
 }
 
 fn load_posts_from_disk(site_id: String) -> Result<Vec<Post>, std::io::Error> {
+    println!("checking 0");
     let site = get_single_site_details(site_id).expect("failed to get site details");
     let site_path = site.build_site_path().expect("failed to get site path");
+    println!("checking 1.5");
     let post_path = site_path.join("md_posts");
     let mut post_vector: Vec<Post> = vec![];
+    println!("checking 1");
+    if !post_path.exists(){
+    println!("checking 1.5");
+        return Err(std::io::Error::new(std::io::ErrorKind::Other, "The site does not contain any posts"))
+    }
+    println!("checking 2");
 
     for md_post in std::fs::read_dir(post_path)? {
         let md_post = md_post?;
@@ -639,8 +658,8 @@ fn load_posts_from_disk(site_id: String) -> Result<Vec<Post>, std::io::Error> {
                         .map(|s| s.trim().to_string())
                         .collect(),
                 5 => title = line.trim().replace("# ", ""),
-                /// TODO - We don't actually need content for this one, so break here
-                /// but, for the single post load function, we'll need to do this.
+                // TODO - We don't actually need content for this one, so break here
+                // but, for the single post load function, we'll need to do this.
                 _ => content += line.trim()
             }
         }

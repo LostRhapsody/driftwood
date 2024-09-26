@@ -16,6 +16,7 @@ import {
 	SquareArrowOutUpRight,
 	PencilLine,
 	Rocket,
+	ScrollText,
 } from "lucide-react";
 import { z } from "zod";
 import openFilePicker from "@/lib/file_picker";
@@ -201,6 +202,42 @@ export default function EditSite({
 		alert("Not yet supported, please visit Netlify to delete this site.");
 	};
 
+	const listPosts = async() => {
+		try{
+			const response = await invoke<string>("get_post_list", {siteId: site_details.id});
+			const response_json = JSON.parse(response);
+			console.log(response_json[0].title);
+			console.log(response_json[0].date);
+			console.log(response_json[0].tags);
+			console.log(response_json[0].image);
+			console.log(response_json[0].content);
+
+		} catch(err){
+				const fields = ["success","title","description"];
+				// parse the error
+				if (typeof err === "string") {
+					const err_json = JSON.parse(err);
+					// if can't process response (shouldn't happen)
+					if (!processResponse(err_json,fields)) {
+						toast({
+							title: "Uh oh! Something went wrong.",
+							description: "There was a problem with your request.",
+						});
+
+						return;
+					}
+
+					const { success, title, description } = err_json;
+
+					toast({
+						title: title,
+						description: description,
+					});
+				}
+				console.error(err);
+		}
+	}
+
 	return (
 		<div>
 			<h1 className="text-4xl pb-2">Update {site_details.name}</h1>
@@ -233,6 +270,10 @@ export default function EditSite({
 					&nbsp;Return to sites list
 				</Button>
 			</div>
+			<Button onClick={listPosts} className="mt-4 w-52">
+				<ScrollText />
+					&nbsp;List posts
+				</Button>
 			<div className="pb-10">
 				<form
 					onSubmit={handleSubmit(onSubmit)}

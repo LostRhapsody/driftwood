@@ -11,7 +11,7 @@ use std::{
 };
 use tinytemplate::{format_unescaped, TinyTemplate};
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Post {
     pub title: String,
     pub date: String,
