@@ -6,6 +6,12 @@ use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
 use std::path::Path;
 
+/// TODO create a list posts command to list all the posts for a site
+/// let _ = load_posts_from_disk(String::from("182b3e43-cf56-4f20-bb44-45a9e7b42b0a"));
+/// TODO clone and refactor load_posts_from_disk to load_post_from_disk, iterate through dir, don't read through the files until a specific file is found
+/// TODO list the posts in the client and load post data into the edit post screen
+/// TODO in edit post screen, add field for image, and create a way to extract an excerpt from the post's contents.
+
 // This is like the post struct from driftwood.rs, but
 // is strictly for serializing the json from the client.
 #[derive(Serialize, Deserialize, Debug)]
@@ -599,4 +605,59 @@ fn get_single_site_details(site_id: String) -> Result<SiteDetails, String> {
             )))
         }
     }
+}
+
+fn load_posts_from_disk(site_id: String) -> Result<Vec<Post>, std::io::Error> {
+    let site = get_single_site_details(site_id).expect("failed to get site details");
+    let site_path = site.build_site_path().expect("failed to get site path");
+    let post_path = site_path.join("md_posts");
+    let mut post_vector: Vec<Post> = vec![];
+
+    for md_post in std::fs::read_dir(post_path)? {
+        let md_post = md_post?;
+        let path = md_post.path();
+        let filename = path.file_name().expect("Tried to get file name of post").to_string_lossy().into_owned();
+        let file = std::fs::read_to_string(path)?;
+
+        let mut title = String::new();
+        let mut date = String::new();
+        let mut image = None;
+        let mut tags: Vec<String> = vec![];
+        let mut content = String::new();
+        let mut line_counter = 0;
+
+        for line in file.lines() {
+            line_counter += 1;
+            match line_counter {
+                1 => date = line.trim().replace("date:",""),
+                2 => continue,
+                3 => image = Some(line.trim().replace("image:","")),
+                4 =>
+                    tags = line.replace("tags:", "")
+                        .trim()
+                        .split(',')
+                        .map(|s| s.trim().to_string())
+                        .collect(),
+                5 => title = line.trim().replace("# ", ""),
+                /// TODO - We don't actually need content for this one, so break here
+                /// but, for the single post load function, we'll need to do this.
+                _ => content += line.trim()
+            }
+        }
+
+        let post = Post {
+            title,
+            date,
+            image,
+            filename,
+            content,
+            tags,
+        };
+
+        println!("Post data: {:?}", post);
+
+        post_vector.push(post);
+    }
+
+    Ok(post_vector)
 }

@@ -11,23 +11,25 @@ use std::{
 };
 use tinytemplate::{format_unescaped, TinyTemplate};
 
+#[derive(Debug)]
 pub struct Post {
     pub title: String,
     pub date: String,
     pub content: String,
     pub filename: String,
+    pub image: Option<String>,
     pub tags: Vec<String>,
 }
 
 #[derive(Serialize)]
 struct BlogCardContext {
-    filename: String,
     title: String,
     date: String,
     excerpt: String,
     image: String,
     sitename: String,
     tags: String,
+    filename: String,
 }
 
 #[derive(Serialize)]
@@ -92,6 +94,7 @@ impl Post {
         let date = date.format("%Y/%m/%d %I:%M %p").to_string();
         let filename = String::new();
         let content = String::new();
+        let image = None;
         let tags = Vec::new();
         Post {
             title,
@@ -99,6 +102,7 @@ impl Post {
             content,
             filename,
             tags,
+            image,
         }
     }
 
