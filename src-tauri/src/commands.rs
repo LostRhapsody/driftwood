@@ -7,8 +7,8 @@ use std::io::{Read, Write};
 use std::path::Path;
 
 /// TODO clone and refactor load_posts_from_disk to load_post_from_disk, iterate through dir, don't read through the files until a specific file is found
-/// TODO client now receives an array of posts from disk, need a component and new screen to list them
-/// TODO in edit post screen, add field for image, and create a way to extract an excerpt from the post's contents.
+/// TODO in edit post screen, add field for image, tags, and create a way to extract an excerpt from the post's contents.
+/// TODO - label post file names with IDs so they are unique
 
 // This is like the post struct from driftwood.rs, but
 // is strictly for serializing the json from the client.

@@ -19,36 +19,48 @@ export default function Home() {
 	const [hasToken, setHasToken] = useState(true);
 	const [currentPage, setCurrentPage] = useState("home");
 	const [currentSite, setCurrentSite] = useState("");
+	const [currentPost, setCurrentPost] = useState("");
 
 	const handleEditSite = (site_id: string) => {
 		console.log("Edit Site id: ", site_id);
 		setCurrentPage("edit");
 		setCurrentSite(site_id);
+		setCurrentPost("");
 	};
 
 	const handleReturnClick = () => {
 		console.log("Returning to sites list");
 		setCurrentPage("sites");
 		setCurrentSite("");
+		setCurrentPost("");
 	};
 
 	const handlePostReturnClick = (site_id: string) => {
 		console.log("Returning to edit site");
 		setCurrentPage("edit");
 		setCurrentSite(site_id);
+		setCurrentPost("");
 	};
 
 	const handleViewPostsClick = (site_id: string) => {
 		console.log("List posts for site: ", site_id);
 		setCurrentPage("list_posts");
 		setCurrentSite(site_id);
+		setCurrentPost("");
 	};
 
 	const handleAddPostClick = (site_id: string) => {
 		console.log("Add post Site id: ", site_id);
 		setCurrentPage("post");
 		setCurrentSite(site_id);
+		setCurrentPost("");
 	};
+
+	const handlePostEditClick = (post_name:string) => {
+		console.log("Editing post: ", post_name);
+		setCurrentPage("post");
+		setCurrentPost(post_name);
+	}
 
 	const renderContent = () => {
 		switch (currentPage) {
@@ -88,11 +100,12 @@ export default function Home() {
 				return (
 					<CreatePost
 						site={currentSite}
+						post_name={currentPost}
 						onReturnClick={handlePostReturnClick}
 					/>
 				);
 			case "list_posts":
-				return <Posts site={currentSite} />;
+				return <Posts site={currentSite} onEditClick={handlePostEditClick} />;
 			default:
 				return <div>Home sweet home default</div>;
 		}

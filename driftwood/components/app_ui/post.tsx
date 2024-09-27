@@ -64,17 +64,27 @@ interface WebsiteDetails {
 
 // create site for schema
 const formSchema = z.object({
-	post_name: z.string().min(1)
+	post_name: z.string().min(1),
 });
 
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-const MarkdownEditor = ( {site, onReturnClick }: {site: any, onReturnClick: (site_details:string) => void}) => {
+const MarkdownEditor = ({
+	site,
+	post_name,
+	onReturnClick,
+}: {
+	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+	site: any;
+	post_name: string;
+	onReturnClick: (site_details: string) => void;
+}) => {
+	/// TODO - if post_name is present, retrieve post details from disk
 	console.log("site: ", site);
+	console.log("post_name: ", post_name);
 	console.log("onReturnClick: ", onReturnClick);
 
-  // all for getting site details from disk
+	// all for getting site details from disk
 	const { toast } = useToast();
-  const [site_details, set_site_details] = useState<WebsiteDetails>({
+	const [site_details, set_site_details] = useState<WebsiteDetails>({
 		name: "",
 		domain: "",
 		id: "",
@@ -84,7 +94,7 @@ const MarkdownEditor = ( {site, onReturnClick }: {site: any, onReturnClick: (sit
 		password: "",
 	});
 
-  // Create site form defition
+	// Create site form defition
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
@@ -92,33 +102,30 @@ const MarkdownEditor = ( {site, onReturnClick }: {site: any, onReturnClick: (sit
 		},
 	});
 
-  const create_post = async (values: z.infer<typeof formSchema>) => {
-    console.log("Creating post");
-    console.log("Post values: ", values)
-    console.log("Post text: " , markdownText);
-    const post_data = {
-      "post_name": values.post_name,
-      "post_text":markdownText,
-    };
-    const site_data = {
-      "name": site_details.name,
-      "domain": site_details.domain,
-      "id": site_details.id,
-      "ssl": site_details.ssl,
-      "url": site_details.url,
-      "screenshot_url": site_details.screenshot_url,
-      "password": site_details.password
-    };
-    const response = await invoke<string>(
-      "create_post",
-      {
-        postData: JSON.stringify(post_data),
-        siteData: JSON.stringify(site_data)
-      }
-    );
-  }
+	const create_post = async (values: z.infer<typeof formSchema>) => {
+		console.log("Creating post");
+		console.log("Post values: ", values);
+		console.log("Post text: ", markdownText);
+		const post_data = {
+			post_name: values.post_name,
+			post_text: markdownText,
+		};
+		const site_data = {
+			name: site_details.name,
+			domain: site_details.domain,
+			id: site_details.id,
+			ssl: site_details.ssl,
+			url: site_details.url,
+			screenshot_url: site_details.screenshot_url,
+			password: site_details.password,
+		};
+		const response = await invoke<string>("create_post", {
+			postData: JSON.stringify(post_data),
+			siteData: JSON.stringify(site_data),
+		});
+	};
 
-  // submit handler for site create form
+	// submit handler for site create form
 	function onSubmit(values: z.infer<typeof formSchema>) {
 		create_post(values);
 	}
@@ -163,7 +170,7 @@ const MarkdownEditor = ( {site, onReturnClick }: {site: any, onReturnClick: (sit
 
 	const [markdownText, setMarkdownText] = useState("");
 
-	const insertAtCursor= (tag: string) => {
+	const insertAtCursor = (tag: string) => {
 		const textarea = document.getElementById("textarea") as HTMLTextAreaElement;
 		const selectionStart = textarea?.selectionStart || 0;
 		const selectionEnd = textarea?.selectionEnd || 0;
@@ -360,14 +367,18 @@ const MarkdownEditor = ( {site, onReturnClick }: {site: any, onReturnClick: (sit
 
 	return (
 		<div className="w-full">
-
-      {/* Post details form */}
-      <div className="w-full bg-primary rounded-xl p-2 mb-4">
-        <p className="text-xl">Site: {site_details.name}</p>
-				<Button className="mt-4" variant={"outline"} onClick={() => onReturnClick(site_details.id)}>
-					<ChevronLeft />&nbsp;Return to Edit site
+			{/* Post details form */}
+			<div className="w-full bg-primary rounded-xl p-2 mb-4">
+				<p className="text-xl">Site: {site_details.name}</p>
+				<Button
+					className="mt-4"
+					variant={"outline"}
+					onClick={() => onReturnClick(site_details.id)}
+				>
+					<ChevronLeft />
+					&nbsp;Return to Edit site
 				</Button>
-      </div>
+			</div>
 
 			{/* Toolbar */}
 			<div className="w-full flex justify-center space-x-2 mb-4 bg-primary rounded-xl p-2">
@@ -454,11 +465,11 @@ const MarkdownEditor = ( {site, onReturnClick }: {site: any, onReturnClick: (sit
 					</ReactMarkdown>
 				</div>
 			</div>
-      {/* Submit post */}
-      <div className="w-full bg-primary rounded-xl p-2 mt-4">
-        <Form {...form}>
+			{/* Submit post */}
+			<div className="w-full bg-primary rounded-xl p-2 mt-4">
+				<Form {...form}>
 					<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
+						<FormField
 							control={form.control}
 							name="post_name"
 							render={({ field }) => (
@@ -467,17 +478,17 @@ const MarkdownEditor = ( {site, onReturnClick }: {site: any, onReturnClick: (sit
 									<FormControl>
 										<Input placeholder="new post" {...field} />
 									</FormControl>
-									<FormDescription>
-										The name of the post
-									</FormDescription>
+									<FormDescription>The name of the post</FormDescription>
 									<FormMessage />
 								</FormItem>
 							)}
 						/>
-          <Button className="dark" type="submit">Create post</Button>
-        </form>
-        </Form>
-      </div>
+						<Button className="dark" type="submit">
+							Create post
+						</Button>
+					</form>
+				</Form>
+			</div>
 		</div>
 	);
 };
