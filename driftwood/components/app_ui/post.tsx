@@ -78,6 +78,7 @@ const MarkdownEditor = ({
 	onReturnClick: (site_details: string) => void;
 }) => {
 	/// TODO - if post_name is present, retrieve post details from disk
+	/// TODO - if post_name is present, return to post list, not edit site.
 	console.log("site: ", site);
 	console.log("post_name: ", post_name);
 	console.log("onReturnClick: ", onReturnClick);
