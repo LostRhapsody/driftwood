@@ -52,6 +52,17 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
 interface WebsiteDetails {
 	name: string;
 	domain: string;
@@ -85,6 +96,8 @@ const MarkdownEditor = ({
 
 	// all for getting site details from disk
 	const { toast } = useToast();
+	const [isAlertOpen, setIsAlertOpen] = useState(false);
+	const [postName, setPostName] = useState("");
 	const [site_details, set_site_details] = useState<WebsiteDetails>({
 		name: "",
 		domain: "",
@@ -111,6 +124,9 @@ const MarkdownEditor = ({
 			post_name: values.post_name,
 			post_text: markdownText,
 		};
+
+		setPostName(post_data.post_name);
+
 		const site_data = {
 			name: site_details.name,
 			domain: site_details.domain,
@@ -124,6 +140,11 @@ const MarkdownEditor = ({
 			postData: JSON.stringify(post_data),
 			siteData: JSON.stringify(site_data),
 		});
+		const response_json = JSON.parse(response);
+		console.log("response: ", response_json);
+		if (response_json.success){
+			setIsAlertOpen(true);
+		}
 	};
 
 	// submit handler for site create form
@@ -367,130 +388,148 @@ const MarkdownEditor = ({
 	setupKeyboardShortcuts(shortcuts);
 
 	return (
-		<div className="w-full">
-			{/* Post details form */}
-			<div className="w-full bg-primary rounded-xl p-2 mb-4">
-				<p className="text-xl">Site: {site_details.name}</p>
-				<Button
-					className="mt-4"
-					variant={"outline"}
-					onClick={() => onReturnClick(site_details.id)}
-				>
-					<ChevronLeft />
-					&nbsp;Return to Edit site
-				</Button>
-			</div>
-
-			{/* Toolbar */}
-			<div className="w-full flex justify-center space-x-2 mb-4 bg-primary rounded-xl p-2">
-				{toolbarButtons.map((btn) => (
-					<TooltipProvider key={btn.id} delayDuration={200}>
-						<Tooltip>
-							<TooltipTrigger>
-								{btn.id === "heading1" ? (
-									<ContextMenu>
-										<ContextMenuTrigger>
-											<Button
-												variant={"outline"}
-												onClick={() => insertAtCursor(btn.tag)}
-											>
-												{btn.label}
-											</Button>
-										</ContextMenuTrigger>
-										<ContextMenuContent className="dark">
-											{headers.map((heading) => (
-												<ContextMenuItem key={heading.id}>
-													<Button
-														variant={"outline"}
-														onClick={() => insertAtCursor(heading.tag)}
-														className=""
-													>
-														{heading.label}
-													</Button>
-													<p className="">&nbsp;{heading.tooltip}</p>
-												</ContextMenuItem>
-											))}
-										</ContextMenuContent>
-									</ContextMenu>
-								) : (
-									<Button
-										variant={"outline"}
-										onClick={() => insertAtCursor(btn.tag)}
-									>
-										{btn.label}
-									</Button>
-								)}
-							</TooltipTrigger>
-							<TooltipContent>{btn.tooltip}</TooltipContent>
-						</Tooltip>
-					</TooltipProvider>
-				))}
-			</div>
-
-			{/* Main Editor and Preview Area */}
-			<div className="grid grid-cols-2 gap-4">
-				{/* Textarea */}
-				<ReactTextareaAutosize
-					minRows={6}
-					value={markdownText}
-					onChange={(e) => setMarkdownText(e.target.value)}
-					className="w-full p-4 bg-transparent text-white border border-gray-600 rounded-md"
-					placeholder="Write your markdown here..."
-					id="textarea"
-				/>
-
-				{/* Preview */}
-				<div className="w-full p-4 border border-gray-600 rounded-md markdown">
-					<ReactMarkdown
-						components={{
-							a: ({ href, children }) => (
-								<Button
-									onClick={(e) => {
-										if (href) {
-											open(href);
-										}
-									}}
-									style={{
-										color: "#1e90ff",
-										textDecoration: "underline",
-										backgroundColor: "transparent",
-										padding: "0",
-									}}
-								>
-									{children}
-								</Button>
-							),
-						}}
+		<>
+			<AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Post created!</AlertDialogTitle>
+						<AlertDialogDescription>
+							Post "{postName}" has been created.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<a href="/">
+							<AlertDialogAction>Home</AlertDialogAction>
+						</a>
+						<AlertDialogAction onClick={() => onReturnClick(site_details.id)}>Return to edit site</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+			<div className="w-full">
+				{/* Post details form */}
+				<div className="w-full bg-primary rounded-xl p-2 mb-4">
+					<p className="text-xl">Site: {site_details.name}</p>
+					<Button
+						className="mt-4"
+						variant={"outline"}
+						onClick={() => onReturnClick(site_details.id)}
 					>
-						{markdownText}
-					</ReactMarkdown>
+						<ChevronLeft />
+						&nbsp;Return to Edit site
+					</Button>
+				</div>
+
+				{/* Toolbar */}
+				<div className="w-full flex justify-center space-x-2 mb-4 bg-primary rounded-xl p-2">
+					{toolbarButtons.map((btn) => (
+						<TooltipProvider key={btn.id} delayDuration={200}>
+							<Tooltip>
+								<TooltipTrigger>
+									{btn.id === "heading1" ? (
+										<ContextMenu>
+											<ContextMenuTrigger>
+												<Button
+													variant={"outline"}
+													onClick={() => insertAtCursor(btn.tag)}
+												>
+													{btn.label}
+												</Button>
+											</ContextMenuTrigger>
+											<ContextMenuContent className="dark">
+												{headers.map((heading) => (
+													<ContextMenuItem key={heading.id}>
+														<Button
+															variant={"outline"}
+															onClick={() => insertAtCursor(heading.tag)}
+															className=""
+														>
+															{heading.label}
+														</Button>
+														<p className="">&nbsp;{heading.tooltip}</p>
+													</ContextMenuItem>
+												))}
+											</ContextMenuContent>
+										</ContextMenu>
+									) : (
+										<Button
+											variant={"outline"}
+											onClick={() => insertAtCursor(btn.tag)}
+										>
+											{btn.label}
+										</Button>
+									)}
+								</TooltipTrigger>
+								<TooltipContent>{btn.tooltip}</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
+					))}
+				</div>
+
+				{/* Main Editor and Preview Area */}
+				<div className="grid grid-cols-2 gap-4">
+					{/* Textarea */}
+					<ReactTextareaAutosize
+						minRows={6}
+						value={markdownText}
+						onChange={(e) => setMarkdownText(e.target.value)}
+						className="w-full p-4 bg-transparent text-white border border-gray-600 rounded-md"
+						placeholder="Write your markdown here..."
+						id="textarea"
+					/>
+
+					{/* Preview */}
+					<div className="w-full p-4 border border-gray-600 rounded-md markdown">
+						<ReactMarkdown
+							components={{
+								a: ({ href, children }) => (
+									<Button
+										onClick={(e) => {
+											if (href) {
+												open(href);
+											}
+										}}
+										style={{
+											color: "#1e90ff",
+											textDecoration: "underline",
+											backgroundColor: "transparent",
+											padding: "0",
+										}}
+									>
+										{children}
+									</Button>
+								),
+							}}
+						>
+							{markdownText}
+						</ReactMarkdown>
+					</div>
+				</div>
+				{/* Submit post */}
+				<div className="w-full bg-primary rounded-xl p-2 mt-4">
+					<Form {...form}>
+						<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+							<FormField
+								control={form.control}
+								name="post_name"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Post name</FormLabel>
+										<FormControl>
+											<Input placeholder="new post" {...field} />
+										</FormControl>
+										<FormDescription>The name of the post</FormDescription>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+							<Button className="dark" type="submit">
+								Create post
+							</Button>
+						</form>
+					</Form>
 				</div>
 			</div>
-			{/* Submit post */}
-			<div className="w-full bg-primary rounded-xl p-2 mt-4">
-				<Form {...form}>
-					<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-						<FormField
-							control={form.control}
-							name="post_name"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Post name</FormLabel>
-									<FormControl>
-										<Input placeholder="new post" {...field} />
-									</FormControl>
-									<FormDescription>The name of the post</FormDescription>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-						<Button className="dark" type="submit">
-							Create post
-						</Button>
-					</form>
-				</Form>
-			</div>
-		</div>
+		</>
 	);
 };
 

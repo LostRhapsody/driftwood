@@ -318,11 +318,16 @@ pub fn create_post(post_data: String, site_data: String) -> String {
     match new_post.write_post_to_disk(&site_data, post_data.post_text) {
         Ok(_) => {
             println!("Post written to disk.");
-            String::from("Create post successfully")
+            serde_json::json!({
+                "success":true,
+            }).to_string()
         }
         Err(e) => {
             println!("Error: {}", e);
-            String::from(e.to_string())
+            serde_json::json!({
+                "success":true,
+                "message":e.to_string()
+            }).to_string()
         }
     }
 }
