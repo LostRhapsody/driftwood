@@ -81,6 +81,33 @@ pub fn create_site(new_site: &str) -> Result<String, String> {
 }
 
 #[tauri::command]
+pub fn delete_site(site_id: &str) -> Result<String, String> {
+    println!("Deleting site: {}", site_id );
+
+    let netlify = Netlify::new().map_err(|e| e.to_string())?;
+
+    match netlify.delete_site(site_id) {
+        Ok(site_details) => {
+            refresh_sites(false);
+            Ok(serde_json::json!({
+                "success":true,
+                "title": "deleted",
+                "description": "Site deleted.",
+                "name": site_details.name,
+            })
+            .to_string())
+        },
+        Err(err) => Err(serde_json::json!({
+            "success":false,
+            "title": "Failed to delete site",
+            "description": err.to_string(),
+            "name": "error",
+        })
+        .to_string()),
+    }
+}
+
+#[tauri::command]
 pub fn update_site(site: &str) -> Result<String, String> {
     println!("Updating a site");
     println!("Updated site args: {}", site);

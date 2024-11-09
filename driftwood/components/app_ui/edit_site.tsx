@@ -20,6 +20,15 @@ import {
 } from "lucide-react";
 import { z } from "zod";
 import openFilePicker from "@/lib/file_picker";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const websiteSchema = z.object({
 	site_name: z.string().min(1).max(37).regex(/^[a-zA-Z0-9-]+$/, "Only letters, numbers, and dashes are allowed"),
@@ -59,6 +68,8 @@ export default function EditSite({
 	console.log("site id: ", site);
 
 	const { toast } = useToast();
+	const [isDeleteConfirmOpen, setisDeleteConfirmOpen] = useState(false);
+	const [isNavigateOpen, setisNavigateOpen] = useState(false);
 	const [site_details, set_site_details] = useState<WebsiteDetails>({
 		name: "",
 		domain: "",
@@ -199,13 +210,96 @@ export default function EditSite({
 		}
 	};
 
-	const handleDelete = () => {
+	const confirm_delete = () => {
+
+	}
+
+	const handleDelete = async () => {
+
+		const fields = ["success", "title", "description"];
+
 		// Handle delete action
-		alert("Not yet supported, please visit Netlify to delete this site.");
+		const response = await invoke<string>("delete_site", {
+			siteId: site_details.id,
+		});
+
+		console.log(response);
+
+		const response_json = JSON.parse(response);
+
+		console.log(response_json);
+
+		// if can't process response (shouldn't happen)
+		if (!processResponse(response_json, fields)) {
+			console.error("Error parsing response from server");
+			toast({
+				title: "Uh oh! Something went wrong.",
+				description: "There was a problem with your request.",
+			});
+			return;
+		}
+
+		const { success, title, description } = response_json;
+
+		console.log(success, title, description);
+
+		if (success) {
+			toast({
+				title: `${title}`,
+				description: description,
+			});
+			setisDeleteConfirmOpen(false);
+			setisNavigateOpen(true);
+		} else {
+			toast({
+				title: title,
+				description: description,
+			});
+			console.error("Failed to delete site");
+		}
+
 	};
 
 	return (
 		<div>
+			<AlertDialog open={isDeleteConfirmOpen} onOpenChange={setisDeleteConfirmOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Delete site</AlertDialogTitle>
+						<AlertDialogDescription>
+							Are you sure you want to delete {site_details.name}?
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<Button onClick={() => handleDelete()}>
+							Yes
+						</Button>
+						<Button onClick={() => setisDeleteConfirmOpen(false)}>
+							No
+						</Button>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+			<AlertDialog open={isNavigateOpen} onOpenChange={setisNavigateOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Site deleted</AlertDialogTitle>
+						<AlertDialogDescription>
+							Please return to the home page or your sites page.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<a href="/">
+							<Button>
+								Home
+							</Button>
+						</a>
+						<Button onClick={() => onReturnClick()}>
+							Your sites
+						</Button>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 			<h1 className="text-4xl pb-2">Update {site_details.name}</h1>
 			<h2 className="text-xl py-2">Site ID: {site_details.id}</h2>
 			<div className="flex flex-row gap-8">
@@ -350,7 +444,7 @@ export default function EditSite({
 						<Button
 							type="button"
 							className="edit_button edit_delete"
-							onClick={handleDelete}
+							onClick={() => setisDeleteConfirmOpen(true)}
 						>
 							Delete
 						</Button>

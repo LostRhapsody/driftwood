@@ -224,16 +224,16 @@ impl Netlify {
         self.read_object_response(response)
     }
 
-    /// Update an existing site
+    /// Delete an existing site
     /// Returns a Result containing a vector of the new SiteDetails or an error
     pub fn delete_site(
         &self,
-        site_details: SiteDetails,
+        site_id: &str,
     ) -> Result<SiteDetails, Box<dyn std::error::Error>> {
-        println!("> Deleting site: {}", site_details.name.clone().unwrap());
+        println!("> Deleting site: {}", site_id);
 
         // create the url
-        let request_url = self.url.clone() + "sites/" + site_details.id.clone().unwrap().as_str();
+        let request_url = self.url.clone() + "sites/" + site_id;
 
         // build and send the request
         let client = self.build_client();
@@ -524,9 +524,28 @@ impl Netlify {
         match response {
             Ok(resp) => {
                 if resp.status().is_success() {
-                    let json: serde_json::Value = resp.json()?;
-                    let sites: SiteDetails = serde_json::from_value(json)?;
-                    Ok(sites)
+                    println!("{:?}", resp);
+                    let json: serde_json::Value = match resp.json(){
+                        Ok(json) => json,
+                        Err(_) => {serde_json::json!({"name":"failed to read response",})
+                        }
+                    };
+                    println!("{:?}", json);
+                    match serde_json::from_value(json){
+                        Ok(sites) => return Ok(sites),
+                        // return an empty site details struct if the response can't be serialized into one
+                        Err(_) => return Ok(SiteDetails {
+                            name: Some(String::from("deleted")),
+                            domain: None,
+                            id: None,
+                            ssl: None,
+                            url: None,
+                            screenshot_url: None,
+                            password: None,
+                            required: None,
+                            favicon_file: None,
+                        }),
+                    }
                 } else {
                     match resp.json::<serde_json::Value>() {
                         Ok(json) => {
