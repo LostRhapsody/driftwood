@@ -1,5 +1,9 @@
 use crate::driftwood::{read_and_parse, template_html, NewSite, Post, SiteDetails};
 use crate::netlify::Netlify;
+use crate::communication::{
+    Response,
+    // Request,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::{from_str, Value};
 use std::fs::{File, OpenOptions};
@@ -19,12 +23,20 @@ struct PostData {
 }
 
 #[tauri::command]
-pub fn netlify_login() -> bool {
+pub fn netlify_login() -> Response {
     println!("Logging in");
     let netlify = Netlify::new();
     match netlify {
-        Ok(_) => true,
-        Err(_) => false,
+        Ok(_) => Response {
+            result: Some(true),
+            message: Some(String::from("Logged in")),
+            status: Some(200)
+        },
+        Err(_) => Response {
+            result: Some(false),
+            message: Some(String::from("Could not log in")),
+            status: Some(500)
+        },
     }
 }
 
