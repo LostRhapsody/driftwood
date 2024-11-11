@@ -194,10 +194,6 @@ export default function EditSite({
 		});
 	};
 
-	const confirm_delete = () => {
-
-	}
-
 	const handleDelete = async () => {
 
 		const fields = ["success", "title", "description"];
