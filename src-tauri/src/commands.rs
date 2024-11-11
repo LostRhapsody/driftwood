@@ -102,7 +102,7 @@ pub fn create_site(new_site: &str) -> Response {
 pub fn delete_site(site_id: &str) -> Response {
     println!("Deleting site: {}", site_id );
 
-    let netlify = Netlify::new().map_err(|e| e.to_string()).expect("Failed to create netlify client");
+    let netlify = Netlify::new().map_err(|e| e.to_string()).expect("Failed to create netlify client in delete_site");
 
     match netlify.delete_site(site_id) {
         Ok(site_details) => {
@@ -114,12 +114,12 @@ pub fn delete_site(site_id: &str) -> Response {
 }
 
 #[tauri::command]
-pub fn update_site(site: &str) -> Result<String, String> {
+pub fn update_site(site: &str) -> Response {
     println!("Updating a site");
     println!("Updated site args: {}", site);
 
-    let site: SiteDetails = serde_json::from_str(site).map_err(|e| e.to_string())?;
-    let netlify = Netlify::new().map_err(|e| e.to_string())?;
+    let site: SiteDetails = serde_json::from_str(site).map_err(|e| e.to_string()).expect("Need site details from client, in update_site");
+    let netlify = Netlify::new().map_err(|e| e.to_string()).expect("Failed to create netlify client in site_details.");
 
     match netlify.update_site(site.clone()) {
         Ok(site_details) => {
@@ -128,21 +128,9 @@ pub fn update_site(site: &str) -> Result<String, String> {
             if favicon != "" {
                 site.move_favicon_to_site_dir(favicon).expect("Tried moving new favicon file, failed.");
             }
-            Ok(serde_json::json!({
-                "success":true,
-                "title": "updated",
-                "description": "Site updated successfully! 🎉",
-                "name": site_details.name,
-            })
-            .to_string())
+            Response::success(String::from("Site updated successfully! 🎉"))
         },
-        Err(err) => Err(serde_json::json!({
-            "success":false,
-            "title": "Failed to update site",
-            "description": err.to_string(),
-            "name": "error",
-        })
-        .to_string()),
+        Err(err) => Response::fail(err.to_string())
     }
 }
 
@@ -192,11 +180,11 @@ pub fn refresh_sites(return_site: bool) -> String {
 }
 
 #[tauri::command]
-pub fn get_site_details(site_id: String) -> String {
+pub fn get_site_details(site_id: String) -> Response {
     println!("Getting details for site {}", site_id);
 
     match get_single_site_details(site_id) {
-        Ok(result) => {
+        Ok(mut result) => {
             println!("Returning site details and favicon path");
 
             let file_path = "./sites";
@@ -228,21 +216,16 @@ pub fn get_site_details(site_id: String) -> String {
                 }
             }
 
-            let site_json = serde_json::json!({
-                "name":result.name,
-                "domain":result.domain,
-                "favicon_file": favicon,
-                "id":result.id,
-                "ssl":result.ssl,
-                "url":result.url,
-                "screenshot_url":result.screenshot_url,
-                "password":result.password,
+            result.favicon_file = Some(favicon);
 
-            })
-            .to_string();
-            site_json
+            Response {
+                result:  Some(true),
+                status:  Some(200),
+                message: Some(String::from("Retreived site details")),
+                body: Some(serde_json::to_value(result).expect("Failed to serialize SiteDetails in get_site_details"))
+            }
         }
-        Err(err) => err,
+        Err(err) => Response::fail(err.to_string()),
     }
 }
 

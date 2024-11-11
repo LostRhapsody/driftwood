@@ -41,7 +41,6 @@ const websiteSchema = z.object({
 	ssl: z.boolean(),
 	url: z.string().url("Invalid URL format"),
 	screenshot_url: z.string().url("Invalid screenshot URL format").optional(),
-	// password: z.string(),
 });
 
 interface WebsiteDetails {
@@ -52,7 +51,6 @@ interface WebsiteDetails {
 	ssl: boolean;
 	url: string;
 	screenshot_url?: string;
-	// password: string;
 }
 
 export default function EditSite({
@@ -81,41 +79,16 @@ export default function EditSite({
 		ssl: true,
 		url: "",
 		screenshot_url: "",
-		// password: "",
 	});
 
 	async function get_site_details() {
-		const fields = [
-			"name",
-			"domain",
-			"favicon_file",
-			"id",
-			"ssl",
-			"url",
-			"screenshot_url",
-			"password",
-		];
-		const response = await invoke<string>("get_site_details", {
+		const response = await invoke<DriftResponse<WebsiteDetails>>("get_site_details", {
 			siteId: site,
 		});
 
-		console.log(response);
-
-		// validate we got a response back
-		const response_json = JSON.parse(response);
-
-		// if can't process response (shouldn't happen)
-		if (!processResponse(response_json, fields)) {
-			toast({
-				title: "Uh oh! Something went wrong.",
-				description:
-					"There was a problem with your request, could not retrieve site details.",
-			});
-			return;
-		}
-
-		set_site_details(response_json);
-		console.log(response_json);
+		const result = processResponse(response);
+		console.log(response.body);
+		result ? set_site_details(response.body) : alert(response.message);
 	}
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
@@ -146,41 +119,20 @@ export default function EditSite({
 	};
 
 	const update_site = async (data: WebsiteDetails) => {
-		const fields = ["success", "title", "description", "name"];
 
-		const response = await invoke<string>("update_site", {
+		const response = await invoke<DriftResponse>("update_site", {
 			site: JSON.stringify(data),
 		});
 
-		// validate we got a response back
-		const response_json = JSON.parse(response);
+		const result = processResponse(response);
 
-		// if can't process response (shouldn't happen)
-		if (!processResponse(response_json, fields)) {
-			toast({
-				title: "Uh oh! Something went wrong.",
-				description: "There was a problem with your request.",
-			});
-			return;
-		}
-
-		const { success, title, description, name } = response_json;
-		if (success) {
-			toast({
-				title: `${name} ${title}`,
-				description: description,
-			});
-		} else {
-			toast({
-				title: title,
-				description: description,
-			});
-			console.error("Failed to update site");
-		}
+		toast({
+			title: "Update status",
+			description: response.message,
+		});
 	};
 
 	const deploy_site = async () => {
-		const fields = ["success", "title", "description"];
 
 		const response = await invoke<DriftResponse>("deploy_site", {
 			siteId: site_details.id,
@@ -195,8 +147,6 @@ export default function EditSite({
 	};
 
 	const handleDelete = async () => {
-
-		const fields = ["success", "title", "description"];
 
 		// Handle delete action
 		const response = await invoke<DriftResponse>("delete_site", {
