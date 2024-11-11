@@ -99,29 +99,17 @@ pub fn create_site(new_site: &str) -> Response {
 }
 
 #[tauri::command]
-pub fn delete_site(site_id: &str) -> Result<String, String> {
+pub fn delete_site(site_id: &str) -> Response {
     println!("Deleting site: {}", site_id );
 
-    let netlify = Netlify::new().map_err(|e| e.to_string())?;
+    let netlify = Netlify::new().map_err(|e| e.to_string()).expect("Failed to create netlify client");
 
     match netlify.delete_site(site_id) {
         Ok(site_details) => {
             refresh_sites(false);
-            Ok(serde_json::json!({
-                "success":true,
-                "title": "deleted",
-                "description": "Site deleted.",
-                "name": site_details.name,
-            })
-            .to_string())
+            Response::success(format!("Site {} deleted!", site_details.name.expect("Site name needs to be provided from site details in delete_site")))
         },
-        Err(err) => Err(serde_json::json!({
-            "success":false,
-            "title": "Failed to delete site",
-            "description": err.to_string(),
-            "name": "error",
-        })
-        .to_string()),
+        Err(err) => Response::fail(err.to_string()),
     }
 }
 
@@ -378,7 +366,7 @@ pub fn create_post(post_data: String, site_data: String) -> String {
 }
 
 #[tauri::command]
-pub fn deploy_site(site_id: String) -> String {
+pub fn deploy_site(site_id: String) -> Response {
     match Netlify::new() {
         Ok(netlify) => {
             let site = get_single_site_details(site_id).expect("Failed to load site details");
@@ -470,12 +458,7 @@ pub fn deploy_site(site_id: String) -> String {
             } else {
                 let sha_error = sha1_result.err().unwrap();
                 println!("> Error: {}", sha_error);
-                return serde_json::json!({
-                    "success":false,
-                    "title": "Failed to deploy site",
-                    "description": format!("Error: {}", sha_error),
-                })
-                .to_string();
+                return Response::fail(String::from("Failed to delete site, error in response from Netlify"));
             }
 
             // unwrap the result to get the FileHashes struct
@@ -525,14 +508,9 @@ pub fn deploy_site(site_id: String) -> String {
                 }
             }
 
-            serde_json::json!({
-                "success":true,
-                "title": "Site deployed 🚀",
-                "description": "Finished deploying site!",
-            })
-            .to_string()
+            Response::success(String::from("Deployed site successfully! 🚀"))
         }
-        Err(e) => e.to_string(),
+        Err(e) => Response::fail(format!("Failed to deploy site: {}", e.to_string()))
     }
 }
 

@@ -4,7 +4,6 @@ import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-shell";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { processResponse } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -28,6 +27,11 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+	type DriftResponse,
+	type toastData,
+	processResponse,
+} from "@/types/response";
 
 const websiteSchema = z.object({
 	site_name: z.string().min(1).max(37).regex(/^[a-zA-Z0-9-]+$/, "Only letters, numbers, and dashes are allowed"),
@@ -178,35 +182,16 @@ export default function EditSite({
 	const deploy_site = async () => {
 		const fields = ["success", "title", "description"];
 
-		const response = await invoke<string>("deploy_site", {
+		const response = await invoke<DriftResponse>("deploy_site", {
 			siteId: site_details.id,
 		});
 
-		// validate we got a response back
-		const response_json = JSON.parse(response);
+		const result = processResponse(response);
 
-		// if can't process response (shouldn't happen)
-		if (!processResponse(response_json, fields)) {
-			toast({
-				title: "Uh oh! Something went wrong.",
-				description: "There was a problem with your request.",
-			});
-			return;
-		}
-
-		const { success, title, description, name } = response_json;
-		if (success) {
-			toast({
-				title: `${title}`,
-				description: description,
-			});
-		} else {
-			toast({
-				title: title,
-				description: description,
-			});
-			console.error("Failed to deploy site");
-		}
+		toast({
+			title: "Deploy status",
+			description: response.message
+		});
 	};
 
 	const confirm_delete = () => {
@@ -218,43 +203,24 @@ export default function EditSite({
 		const fields = ["success", "title", "description"];
 
 		// Handle delete action
-		const response = await invoke<string>("delete_site", {
+		const response = await invoke<DriftResponse>("delete_site", {
 			siteId: site_details.id,
 		});
 
-		console.log(response);
+		const result = processResponse(response);
 
-		const response_json = JSON.parse(response);
-
-		console.log(response_json);
-
-		// if can't process response (shouldn't happen)
-		if (!processResponse(response_json, fields)) {
-			console.error("Error parsing response from server");
+		if (result) {
 			toast({
-				title: "Uh oh! Something went wrong.",
-				description: "There was a problem with your request.",
-			});
-			return;
-		}
-
-		const { success, title, description } = response_json;
-
-		console.log(success, title, description);
-
-		if (success) {
-			toast({
-				title: `${title}`,
-				description: description,
+				title: "Site Deleted",
+				description: response.message,
 			});
 			setisDeleteConfirmOpen(false);
 			setisNavigateOpen(true);
 		} else {
 			toast({
-				title: title,
-				description: description,
+				title: "Failed to delete site",
+				description: response.message,
 			});
-			console.error("Failed to delete site");
 		}
 
 	};
