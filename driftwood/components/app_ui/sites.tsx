@@ -11,6 +11,10 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
+import {
+	type DriftResponse,
+	processResponse
+} from "@/types/response";
 
 type Site = {
 	name: string;
@@ -55,23 +59,19 @@ export default function Sites(onEditClick:any) {
   const handleRefresh = async () => {
 		console.log("Refreshing sites");
 		const return_sites = true;
-    try {
-      const response = await invoke<string>("refresh_sites", { returnSite:return_sites });
 
-      // Parse and set the site data
-      const parsedData: Site[] = JSON.parse(response);
-      setData(parsedData);
+		const response = await invoke<DriftResponse<Site[]>>("refresh_sites", { returnSite:return_sites });
+		const result = processResponse(response);
 
-      toast({
-        title: "Sites Refreshed",
-        description: "Sites successfully retrieved from Netify",
-      });
-    } catch (error) {
-      toast({
-        title: "Uh oh! Something went wrong.",
-        description: `Error: ${error}`,
-      });
-    }
+		// Parse and set the site data
+		const parsedData: Site[] = response.body;
+		setData(parsedData);
+
+		toast({
+			title: "Sites Refreshed",
+			description: "Sites successfully retrieved from Netify",
+		});
+
   };
 
 	if (loading) return <div>Loading...</div>;

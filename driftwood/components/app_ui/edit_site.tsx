@@ -29,9 +29,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
 	type DriftResponse,
-	type toastData,
 	processResponse,
 } from "@/types/response";
+import type { WebsiteDetails } from "@/interfaces/website_details";
 
 const websiteSchema = z.object({
 	site_name: z.string().min(1).max(37).regex(/^[a-zA-Z0-9-]+$/, "Only letters, numbers, and dashes are allowed"),
@@ -42,16 +42,6 @@ const websiteSchema = z.object({
 	url: z.string().url("Invalid URL format"),
 	screenshot_url: z.string().url("Invalid screenshot URL format").optional(),
 });
-
-interface WebsiteDetails {
-	name: string;
-	domain: string;
-	favicon_file: string;
-	id: string;
-	ssl: boolean;
-	url: string;
-	screenshot_url?: string;
-}
 
 export default function EditSite({
 	site,

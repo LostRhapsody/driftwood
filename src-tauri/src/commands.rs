@@ -105,9 +105,9 @@ pub fn delete_site(site_id: &str) -> Response {
     let netlify = Netlify::new().map_err(|e| e.to_string()).expect("Failed to create netlify client in delete_site");
 
     match netlify.delete_site(site_id) {
-        Ok(site_details) => {
+        Ok(_site_details) => {
             refresh_sites(false);
-            Response::success(format!("Site {} deleted!", site_details.name.expect("Site name needs to be provided from site details in delete_site")))
+            Response::success(String::from("Site deleted!"))
         },
         Err(err) => Response::fail(err.to_string()),
     }
@@ -135,7 +135,7 @@ pub fn update_site(site: &str) -> Response {
 }
 
 #[tauri::command]
-pub fn refresh_sites(return_site: bool) -> String {
+pub fn refresh_sites(return_site: bool) -> Response {
     println!("Refreshing sites");
     match Netlify::new() {
         Ok(netlify) => {
@@ -144,37 +144,27 @@ pub fn refresh_sites(return_site: bool) -> String {
             let mut sites_json = Vec::new();
 
             for site in site_details {
-                let site_json = serde_json::json!({
-                    "name": site.name.unwrap_or_else(|| "".to_string()),
-                    "domain": site.domain.unwrap_or_else(|| "".to_string()),
-                    "id": site.id.unwrap_or_else(|| "".to_string()),
-                    "ssl": site.ssl.unwrap_or(false),
-                    "url": site.url.unwrap_or_else(|| "".to_string()),
-                    "screenshot_url": site.screenshot_url.unwrap_or_else(|| "https://images.unsplash.com/photo-1615147342761-9238e15d8b96?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1001&q=80".to_string()),
-                    "required": vec![""],
-                });
-                sites_json.push(site_json);
+                sites_json.push(serde_json::to_value(site).expect("Failed to serialize site data in refresh_sites"));
             }
 
-            let sites_json_string = serde_json::to_string(&sites_json)
-                .unwrap_or_else(|_| String::from("Failed to serialize sites"));
-            if let Err(e) = save_json_to_file("sites/sites.json", sites_json) {
+            if let Err(e) = save_json_to_file("sites/sites.json", sites_json.clone()) {
                 eprintln!("Failed to save JSON to file: {}", e);
             }
+
             if return_site {
-                sites_json_string
+                Response {
+                    result: Some(true),
+                    status: Some(200),
+                    message: Some(String::from("Refreshed sites")),
+                    body: Some(serde_json::to_value(sites_json).expect("Failed to serialize site array in refresh_sites"))
+                }
             } else {
-                serde_json::json!({
-                    "success":true,
-                    "title": "refreshed",
-                    "description": "Sites refreshed",
-                })
-                .to_string()
+                Response::success(String::from("Refreshed sites"))
             }
         }
         Err(e) => {
             println!("Error: {:?}", e);
-            String::from("Failed to retrieve sites from Netlify")
+            Response::fail(e.to_string())
         }
     }
 }
@@ -236,7 +226,6 @@ pub fn list_sites() -> String {
     // Load JSON from file
     match load_json_from_file() {
         Ok(Some(loaded_json)) => {
-            println!("Loaded JSON: {}", loaded_json);
             serde_json::to_string(&loaded_json)
                 .unwrap_or_else(|_| String::from("Failed to serialize sites from disk"))
         }
@@ -260,6 +249,11 @@ pub fn list_sites() -> String {
                         });
                         sites_json.push(site_json);
                     }
+
+                    // TODO: Resume here tomorrow
+                    // for site in site_details {
+                    //     sites_json.push(serde_json::to_value(site).expect("Failed to serialize site data in refresh_sites"));
+                    // }
 
                     let sites_json_string = serde_json::to_string(&sites_json)
                         .unwrap_or_else(|_| String::from("Failed to serialize sites"));
@@ -598,7 +592,6 @@ fn get_single_site_details(site_id: String) -> Result<SiteDetails, String> {
     // Load JSON from file
     match load_json_from_file() {
         Ok(Some(loaded_json)) => {
-            println!("Loaded JSON: {}", loaded_json);
             let site_details: Vec<SiteDetails> = serde_json::from_str(&loaded_json.to_string())
                 .expect("Could not serialize json from disk");
             let mut sites_json: Option<SiteDetails> = None;
