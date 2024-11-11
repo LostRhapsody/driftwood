@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-
+import { type DriftResponse, processResponse } from "@/types/response";
 import Sites from "@/components/app_ui/sites";
 import CreateSite from "@/components/app_ui/create_site";
 import EditSite from "@/components/app_ui/edit_site";
@@ -120,7 +120,7 @@ export default function Home() {
 		setHasToken(hasToken);
 	};
 
-	const handleLoginFailure = (error: unknown) => {
+	const handleLoginFailure = (error: string) => {
 		console.error("Login failed:", error);
 		setHasToken(false);
 	};
@@ -136,12 +136,9 @@ export default function Home() {
 
 	useEffect(() => {
 		const checkToken = async () => {
-			try {
-				const response = await invoke<boolean>("check_token");
-				setHasToken(response);
-			} catch (err) {
-				console.error(err);
-			}
+			const response = await invoke<DriftResponse>("check_token");
+			const result = processResponse(response);
+			setHasToken(result);
 		};
 
 		checkToken();

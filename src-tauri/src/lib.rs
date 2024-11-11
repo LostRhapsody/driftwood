@@ -5,7 +5,7 @@ pub mod commands;
 pub mod crypto;
 pub mod driftwood;
 pub mod netlify;
-pub mod communication;
+pub mod response;
 
 use crate::commands::{
     check_token, create_site, get_site_details, list_sites, netlify_login, netlify_logout,

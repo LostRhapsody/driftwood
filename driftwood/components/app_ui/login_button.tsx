@@ -1,11 +1,12 @@
 import type React from "react";
+import { type DriftResponse, processResponse } from "@/types/response";
 import { invoke } from "@tauri-apps/api/core";
 import { Button } from "@/components/ui/button";
 import { LogIn } from "lucide-react";
 
 interface LoginButtonProps {
   onLoginSuccess: (hasToken: boolean) => void;
-  onLoginFailure: (error: unknown) => void;
+  onLoginFailure: (error: string) => void;
 }
 
 const LoginButton: React.FC<LoginButtonProps> = ({
@@ -13,14 +14,9 @@ const LoginButton: React.FC<LoginButtonProps> = ({
   onLoginFailure,
 }) => {
   const handleLogin = async () => {
-    try {
-      const response = await invoke<boolean>("netlify_login");
-      console.log("Login successful:", response);
-      onLoginSuccess(response);
-    } catch (error) {
-      console.error("Login failed:", error);
-      onLoginFailure(error);
-    }
+      const response = await invoke<DriftResponse>("netlify_login");
+      const success = processResponse(response);
+      success ? onLoginSuccess(success) : onLoginFailure(response.message);
   };
 
   return (

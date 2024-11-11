@@ -47,12 +47,21 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { cn, processResponse, openWiki, templates } from "@/lib/utils";
+import { cn, openWiki, templates } from "@/lib/utils";
 import openFilePicker from "@/lib/file_picker";
+import {
+	type DriftResponse,
+	type toastData,
+	processResponse,
+} from "@/types/response";
 
 // create site for schema
 const formSchema = z.object({
-	site_name: z.string().min(1).max(37).regex(/^[a-zA-Z0-9-]+$/, "Only letters, numbers, and dashes are allowed"),
+	site_name: z
+		.string()
+		.min(1)
+		.max(37)
+		.regex(/^[a-zA-Z0-9-]+$/, "Only letters, numbers, and dashes are allowed"),
 	custom_domain: z.string().max(253),
 	favicon_file: z.string(),
 	template: z.string().min(1),
@@ -95,80 +104,51 @@ export default function CreateSite() {
 	const create_site = async (new_site: unknown) => {
 		const fields = ["success", "title", "description", "name"];
 		const newSite = JSON.stringify(new_site);
-		try {
-			const response = await invoke<string>("create_site", {
-				newSite: newSite,
+
+		const response = await invoke<DriftResponse<toastData>>("create_site", {
+			newSite: newSite,
+		});
+
+		const result = processResponse(response);
+		const toast_data = response.body;
+
+		// if created site successfully, set name, refresh sites, open alert and include in toast
+		if (result) {
+			toast({
+				title: `${toast_data.name} ${toast_data.title}`,
+				description: response.message,
 			});
-
-			console.log(response);
-
-			// validate we got a response back
-			const response_json = JSON.parse(response);
-
-			// if can't process response (shouldn't happen)
-			if (!processResponse(response_json,fields)) {
-				toast({
-					title: "Uh oh! Something went wrong.",
-					description: "There was a problem with your request.",
-				});
-				return;
-			}
-
-			const { success, title, description, name } = response_json;
-
 			setName(name);
-
-			switch (title) {
-				case "created":
-					toast({
-						title: `${name} ${title}`,
-						description: description,
-					});
-					setIsAlertOpen(true);
-					refresh_sites();
-					break;
-			}
-
-			const sites_elemnt = document.getElementById("sites");
-			if (sites_elemnt) {
-				sites_elemnt.innerHTML = response;
-			}
-		} catch (err) {
-			// parse the error
-			if (typeof err === "string") {
-				const err_json = JSON.parse(err);
-				// if can't process response (shouldn't happen)
-				if (!processResponse(err_json,fields)) {
-					toast({
-						title: "Uh oh! Something went wrong.",
-						description: "There was a problem with your request.",
-					});
-
-					return;
-				}
-
-				const { success, title, description, name } = err_json;
-
-				setName(name);
-
-				toast({
-					title: title,
-					description: description,
-				});
-			}
-			console.error(err);
-		} finally {
+			setIsAlertOpen(true);
+			refresh_sites();
+			// if failed to create site, don't do that stuff
+		} else {
+			toast({
+				title: `${toast_data.title}`,
+				description: response.message,
+			});
 		}
 	};
 
 	const refresh_sites = async () => {
 		const return_sites = false;
-		const response = await invoke<string>("refresh_site", { return_sites });
-		const fields = ["success", "title", "description"];
-		if (!processResponse(response,fields)) {
-			console.error("Could not refresh sites")
+		const response = await invoke<DriftResponse>("refresh_site", { return_sites });
+
+		const result = processResponse(response);
+		let title = "";
+
+		if(result){
+			title = "Sites refreshed";
+		} else {
+			title = "Sites not refreshed";
 		}
-	}
+
+		toast({
+			title: `${title}`,
+			description: response.message,
+		});
+
+	};
 
 	// submit handler for site create form
 	function onSubmit(values: z.infer<typeof formSchema>) {
@@ -263,8 +243,8 @@ export default function CreateSite() {
 										Upload File
 									</Button>
 									<FormDescription>
-										The favicon (little icon that goes in the browser's tab)
-										for your site.
+										The favicon (little icon that goes in the browser's tab) for
+										your site.
 										<br />
 										<a
 											className="underline"
@@ -288,6 +268,7 @@ export default function CreateSite() {
 											<FormControl>
 												<Button
 													variant="outline"
+													// biome-ignore lint/a11y/useSemanticElements: <explanation>
 													role="combobox"
 													className={cn(
 														"w-[200px] justify-between",
@@ -415,19 +396,20 @@ export default function CreateSite() {
 									<div className="space-y-0.5">
 										<FormLabel className="text-base">RSS enabled</FormLabel>
 										<FormDescription>
-											Turn this on to add an RSS feed to your website.<br/>
+											Turn this on to add an RSS feed to your website.
+											<br />
 											Learn more about RSS at&nbsp;
 											<Button
-											variant={"ghost"}
-											className="p-0"
-											onClick={(e) => {
-												e.preventDefault();
-												openWiki("rss");
-											}}
-										>
-											wiki.driftwood.com&nbsp;
-											<SquareArrowOutUpRight />
-										</Button>
+												variant={"ghost"}
+												className="p-0"
+												onClick={(e) => {
+													e.preventDefault();
+													openWiki("rss");
+												}}
+											>
+												wiki.driftwood.com&nbsp;
+												<SquareArrowOutUpRight />
+											</Button>
 										</FormDescription>
 									</div>
 									<FormControl>
