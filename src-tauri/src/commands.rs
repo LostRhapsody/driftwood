@@ -320,6 +320,22 @@ pub fn create_post(post_data: String, site_data: String) -> Response {
     }
 }
 
+/// Retrieves post data so you can edit existing posts
+///
+/// # Arguments
+///
+/// * `post_name` a string, the name of the post
+/// * `site_id` a string, the ID of the website
+///
+/// # Returns
+///
+/// A Drift Reponse struct, the body contains the post data structure
+#[tauri::command]
+pub fn get_post_details(post_name:String, site_id: String) -> Response {
+    println!("Getting details for post {}, site {}", post_name, site_id);
+    Response::fail(String::from("Not yet supported!"))
+}
+
 #[tauri::command]
 pub fn deploy_site(site_id: String) -> Response {
     match Netlify::new() {
