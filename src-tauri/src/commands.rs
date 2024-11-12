@@ -470,15 +470,15 @@ pub fn deploy_site(site_id: String) -> Response {
 }
 
 #[tauri::command]
-pub fn get_post_list(site_id:String) -> Result<String, String> {
+pub fn get_post_list(site_id:String) -> Response {
     let posts = load_posts_from_disk(site_id);
     match posts {
-        Ok(posts) => Ok(serde_json::to_string(&posts).expect("Attempted to serialize vector of posts.")),
-        Err(err) => Err(serde_json::json!({
-            "success":false,
-            "title":"Could not find any posts for this site",
-            "description":err.to_string()
-        }).to_string())
+        Ok(posts) =>  {
+            let mut response = Response::success(String::from("Retrieved sites"));
+            response.body = Some(serde_json::to_value(posts).expect("Attempted to serialize vector of posts in get_post_list"));
+            response
+        }
+        Err(err) => Response::fail(String::from("Could not find any posts for this site"))
     }
 }
 

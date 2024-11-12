@@ -2,8 +2,11 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useToast } from "@/hooks/use-toast";
-import { processResponse } from "@/lib/utils";
 import PostCard from "@/components/app_ui/post_card";
+import {
+	type DriftResponse,
+	processResponse
+} from "@/types/response";
 
 type Post = {
 	title: string;
@@ -23,40 +26,19 @@ export default function Posts({
 
 	useEffect(() => {
 		const listPosts = async () => {
-			try {
-				const response = await invoke<string>("get_post_list", {
-					siteId: site,
-				});
-				const response_json: Post[] = JSON.parse(response);
-				console.log(response_json);
-				setData(response_json);
-			} catch (err) {
-				const fields = ["success", "title", "description"];
-				// parse the error
-				if (typeof err === "string") {
-					const err_json = JSON.parse(err);
-					// if can't process response (shouldn't happen)
-					if (!processResponse(err_json, fields)) {
-						toast({
-							title: "Uh oh! Something went wrong.",
-							description: "There was a problem with your request.",
-						});
+			const response = await invoke<DriftResponse<Post[]>>("get_post_list", {
+				siteId: site,
+			});
 
-						return;
-					}
+			const result = processResponse(response);
 
-					const { success, title, description } = err_json;
-
-					toast({
-						title: title,
-						description: description,
-					});
-				}
-				console.error(err);
-			}
+			if(result)
+				setData(response.body);
+			else
+				alert(response.message);
 		};
 		listPosts();
-	}, [site, toast]);
+	}, [site]);
 
 	return (
 		<div className="w-full">
