@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import ReactTextareaAutosize from "react-textarea-autosize";
 import { useToast } from "@/hooks/use-toast";
-import { processResponse } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,6 +60,11 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
+import {
+	type DriftResponse,
+	processResponse
+} from "@/types/response"
 
 interface WebsiteDetails {
 	name: string;
@@ -135,15 +139,17 @@ const MarkdownEditor = ({
 			screenshot_url: site_details.screenshot_url,
 			password: site_details.password,
 		};
-		const response = await invoke<string>("create_post", {
+		const response = await invoke<DriftResponse>("create_post", {
 			postData: JSON.stringify(post_data),
 			siteData: JSON.stringify(site_data),
 		});
-		const response_json = JSON.parse(response);
-		console.log("response: ", response_json);
-		if (response_json.success){
+
+		const result = processResponse(response);
+
+		if (result)
 			setIsAlertOpen(true);
-		}
+		else
+			alert(response.message);
 	};
 
 	// submit handler for site create form
@@ -161,27 +167,16 @@ const MarkdownEditor = ({
 			"screenshot_url",
 			"password",
 		];
-		const response = await invoke<string>("get_site_details", {
+		const response = await invoke<DriftResponse<WebsiteDetails>>("get_site_details", {
 			siteId: site,
 		});
 
-		console.log(response);
+		const result = processResponse(response);
 
-		// validate we got a response back
-		const response_json = JSON.parse(response);
-
-		// if can't process response (shouldn't happen)
-		if (!processResponse(response_json, fields)) {
-			toast({
-				title: "Uh oh! Something went wrong.",
-				description:
-					"There was a problem with your request, could not retrieve site details.",
-			});
-			return;
-		}
-
-		set_site_details(response_json);
-		console.log(response_json);
+		if(result)
+			set_site_details(response.body);
+		else
+			alert("Unable to retrieve site details");
 	}
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>

@@ -259,7 +259,7 @@ pub fn list_sites() -> Response {
 }
 
 #[tauri::command]
-pub fn create_post(post_data: String, site_data: String) -> String {
+pub fn create_post(post_data: String, site_data: String) -> Response {
     println!("Create post, data: {}", post_data);
 
     // serialize the post_data into a JSON object for interactivity.
@@ -311,16 +311,11 @@ pub fn create_post(post_data: String, site_data: String) -> String {
     match new_post.write_post_to_disk(&site_data, post_data.post_text) {
         Ok(_) => {
             println!("Post written to disk.");
-            serde_json::json!({
-                "success":true,
-            }).to_string()
+            Response::success(String::from("success"))
         }
         Err(e) => {
             println!("Error: {}", e);
-            serde_json::json!({
-                "success":true,
-                "message":e.to_string()
-            }).to_string()
+            Response::fail(format!("Failed to write post to disk: {}", e))
         }
     }
 }
