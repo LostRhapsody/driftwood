@@ -122,7 +122,7 @@ pub fn update_site(site: &str) -> Response {
     let netlify = Netlify::new().map_err(|e| e.to_string()).expect("Failed to create netlify client in site_details.");
 
     match netlify.update_site(site.clone()) {
-        Ok(site_details) => {
+        Ok(_site_details) => {
             refresh_sites(false);
             let favicon = site.clone().favicon_file.unwrap_or_default();
             if favicon != "" {
@@ -208,26 +208,25 @@ pub fn get_site_details(site_id: String) -> Response {
 
             result.favicon_file = Some(favicon);
 
-            Response {
-                result:  Some(true),
-                status:  Some(200),
-                message: Some(String::from("Retreived site details")),
-                body: Some(serde_json::to_value(result).expect("Failed to serialize SiteDetails in get_site_details"))
-            }
+            let mut response = Response::success(String::from("Retrieved site details"));
+            response.body = Some(serde_json::to_value(result).expect("Failed to serialize SiteDetails in get_site_details"));
+            response
+
         }
         Err(err) => Response::fail(err.to_string()),
     }
 }
 
 #[tauri::command]
-pub fn list_sites() -> String {
+pub fn list_sites() -> Response {
     println!("Listing sites");
 
     // Load JSON from file
     match load_json_from_file() {
         Ok(Some(loaded_json)) => {
-            serde_json::to_string(&loaded_json)
-                .unwrap_or_else(|_| String::from("Failed to serialize sites from disk"))
+            let mut response = Response::success(String::from("Refreshed sites"));
+            response.body = Some(loaded_json);
+            response
         }
         Ok(None) => {
             println!("File is empty or JSON could not be parsed.");
@@ -238,39 +237,23 @@ pub fn list_sites() -> String {
                     let mut sites_json = Vec::new();
 
                     for site in site_details {
-                        let site_json = serde_json::json!({
-                            "name": site.name.unwrap_or_else(|| "".to_string()),
-                            "domain": site.domain.unwrap_or_else(|| "".to_string()),
-                            "id": site.id.unwrap_or_else(|| "".to_string()),
-                            "ssl": site.ssl.unwrap_or(false),
-                            "url": site.url.unwrap_or_else(|| "".to_string()),
-                            "screenshot_url": site.screenshot_url.unwrap_or_else(|| "https://images.unsplash.com/photo-1615147342761-9238e15d8b96?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1001&q=80".to_string()),
-                            "required": vec![""],
-                        });
-                        sites_json.push(site_json);
+                        sites_json.push(serde_json::to_value(site).expect("Failed to serialize site data in refresh_sites"));
                     }
 
-                    // TODO: Resume here tomorrow
-                    // for site in site_details {
-                    //     sites_json.push(serde_json::to_value(site).expect("Failed to serialize site data in refresh_sites"));
-                    // }
+                    let mut response = Response::success(String::from("Refreshed sites"));
+                    response.body = Some(serde_json::to_value(sites_json).expect("Failed to serialize site json in refresh_sites"));
+                    response
 
-                    let sites_json_string = serde_json::to_string(&sites_json)
-                        .unwrap_or_else(|_| String::from("Failed to serialize sites"));
-                    if let Err(e) = save_json_to_file("sites/sites.json", sites_json) {
-                        eprintln!("Failed to save JSON to file: {}", e);
-                    }
-                    sites_json_string
                 }
                 Err(e) => {
                     println!("Error: {:?}", e);
-                    String::from("Failed to login, please try again")
+                    Response::fail(String::from("Could not create a netlify client in refresh_sites"))
                 }
             }
         }
         Err(e) => {
             eprintln!("Failed to load JSON from file: {}", e);
-            String::from(format!("Failed to load JSON from file: {}", e))
+            Response::fail(format!("Failed to load JSON from file: {}", e))
         }
     }
 }

@@ -35,22 +35,16 @@ export default function Sites(onEditClick:any) {
 
 	useEffect(() => {
 		const loadSites = async () => {
-			try {
-				const response = await invoke<string>("list_sites");
-				if (!response || response === "") {
-					setError("No sites found");
-					return;
-				}
+			const response = await invoke<DriftResponse<Site[]>>("list_sites");
 
-				// Parse and set the site data
-				const parsedData: Site[] = JSON.parse(response);
-				setData(parsedData);
-			} catch (err) {
+			const result = processResponse(response);
+
+			if(result)
+				setData(response.body);
+			else
 				setError("Failed to load sites");
-				console.error(err);
-			} finally {
-				setLoading(false);
-			}
+
+			setLoading(false);
 		};
 
 		loadSites();
