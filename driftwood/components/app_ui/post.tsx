@@ -61,10 +61,7 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-import {
-	type DriftResponse,
-	processResponse
-} from "@/types/response"
+import { type DriftResponse, processResponse } from "@/types/response";
 
 interface WebsiteDetails {
 	name: string;
@@ -75,6 +72,8 @@ interface WebsiteDetails {
 	screenshot_url?: string;
 	password: string;
 }
+
+import type { Post } from "@/types/post";
 
 // create site for schema
 const formSchema = z.object({
@@ -89,7 +88,7 @@ const MarkdownEditor = ({
 	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 	site: any;
 	post_name: string;
-	onReturnClick: (site_details: string) => void;
+	onReturnClick: (site_details: string, show_post_list: boolean) => void;
 }) => {
 	/// TODO - if post_name is present, retrieve post details from disk
 	/// TODO - if post_name is present, return to post list, not edit site.
@@ -110,13 +109,18 @@ const MarkdownEditor = ({
 		screenshot_url: "",
 		password: "",
 	});
+	const [post_details, set_post_details] = useState<Post>({
+		title: "",
+		tags: [],
+		date: "",
+		image: "",
+		filename: "",
+		excerpt: "",
+	});
 
 	// Create site form defition
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
-		defaultValues: {
-			post_name: "",
-		},
 	});
 
 	const create_post = async (values: z.infer<typeof formSchema>) => {
@@ -146,10 +150,8 @@ const MarkdownEditor = ({
 
 		const result = processResponse(response);
 
-		if (result)
-			setIsAlertOpen(true);
-		else
-			alert(response.message);
+		if (result) setIsAlertOpen(true);
+		else alert(response.message);
 	};
 
 	// submit handler for site create form
@@ -158,31 +160,63 @@ const MarkdownEditor = ({
 	}
 
 	async function get_site_details() {
-		const fields = [
-			"name",
-			"domain",
-			"id",
-			"ssl",
-			"url",
-			"screenshot_url",
-			"password",
-		];
-		const response = await invoke<DriftResponse<WebsiteDetails>>("get_site_details", {
-			siteId: site,
-		});
+		const response = await invoke<DriftResponse<WebsiteDetails>>(
+			"get_site_details",
+			{
+				siteId: site,
+			},
+		);
 
 		const result = processResponse(response);
 
-		if(result)
-			set_site_details(response.body);
-		else
-			alert("Unable to retrieve site details");
+		if (result) set_site_details(response.body);
+		else alert("Unable to retrieve site details");
+	}
+
+	async function get_post_details() {
+		setPostName(post_name);
+		console.log(form);
+		form.setValue("post_name", postName);
+
+		const response = await invoke<DriftResponse<Post>>("get_post_details", {
+			siteId: site,
+			postName: postName,
+		});
+
+		const result = processResponse(response);
+		console.log(response);
+		console.log(result);
+
+		if (result) set_post_details(response.body);
+		else alert(response.message);
 	}
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
 	useEffect(() => {
-		get_site_details();
-	}, []);
+		let mounted = true;
+
+		const fetchData = async () => {
+			if (!mounted) return;
+
+			await get_site_details();
+			if (post_name !== "") await get_post_details();
+		};
+
+		fetchData();
+
+		return () => {
+			mounted = false;
+		};
+	}, [post_name]);
+
+	// Update form defaults when post_name changes
+	useEffect(() => {
+		if (postName) {
+			form.reset({
+				post_name: postName,
+			});
+		}
+	}, [postName, form]);
 
 	const [markdownText, setMarkdownText] = useState("");
 
@@ -395,7 +429,19 @@ const MarkdownEditor = ({
 						<a href="/">
 							<AlertDialogAction>Home</AlertDialogAction>
 						</a>
-						<AlertDialogAction onClick={() => onReturnClick(site_details.id)}>Return to edit site</AlertDialogAction>
+						{postName !== "" ? (
+							<AlertDialogAction
+								onClick={() => onReturnClick(site_details.id, true)}
+							>
+								Return to post list
+							</AlertDialogAction>
+						) : (
+							<AlertDialogAction
+								onClick={() => onReturnClick(site_details.id, false)}
+							>
+								Return to edit site
+							</AlertDialogAction>
+						)}
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
@@ -403,14 +449,25 @@ const MarkdownEditor = ({
 				{/* Post details form */}
 				<div className="w-full bg-primary rounded-xl p-2 mb-4">
 					<p className="text-xl">Site: {site_details.name}</p>
-					<Button
-						className="mt-4"
-						variant={"outline"}
-						onClick={() => onReturnClick(site_details.id)}
-					>
-						<ChevronLeft />
-						&nbsp;Return to Edit site
-					</Button>
+					{postName !== "" ? (
+						<Button
+							className="mt-4"
+							variant={"outline"}
+							onClick={() => onReturnClick(site_details.id, true)}
+						>
+							<ChevronLeft />
+							&nbsp;Return to Post list
+						</Button>
+					) : (
+						<Button
+							className="mt-4"
+							variant={"outline"}
+							onClick={() => onReturnClick(site_details.id, false)}
+						>
+							<ChevronLeft />
+							&nbsp;Return to Edit site
+						</Button>
+					)}
 				</div>
 
 				{/* Toolbar */}

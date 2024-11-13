@@ -8,14 +8,7 @@ import {
 	processResponse
 } from "@/types/response";
 
-type Post = {
-	title: string;
-	tags: string[];
-	date: string;
-	image: string;
-	filename: string;
-	excerpt: string;
-};
+import type {Post} from "@/types/post";
 
 export default function Posts({
 	site,

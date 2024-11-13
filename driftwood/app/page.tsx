@@ -35,9 +35,9 @@ export default function Home() {
 		setCurrentPost("");
 	};
 
-	const handlePostReturnClick = (site_id: string) => {
+	const handlePostReturnClick = (site_id: string, show_post_list: boolean) => {
 		console.log("Returning to edit site");
-		setCurrentPage("edit");
+		show_post_list ? setCurrentPage("list_posts") : setCurrentPage("edit");
 		setCurrentSite(site_id);
 		setCurrentPost("");
 	};
