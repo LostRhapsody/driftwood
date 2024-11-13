@@ -32,7 +32,8 @@ const Card: React.FC<PostsListProps> = ({ posts, onEditClick }) => {
 						<div className="card__overlay">
 							<div className="card__content">
 								<h2 className="card__title">
-									<a href={post.filename}>{post.title}</a>
+									{post.title}
+									{/* <a href={post.filename}>{post.title}</a> */}
 								</h2>
 								{post.excerpt && (
 									<p className="card__excerpt">{post.excerpt}</p>
@@ -54,7 +55,7 @@ const Card: React.FC<PostsListProps> = ({ posts, onEditClick }) => {
 									);
 								})}
                 </p>
-                <Button onClick={() => onEditClick(post.title)}>Edit post</Button>
+                <Button className="card__button" onClick={() => onEditClick(post.title)}>Edit post</Button>
 							</div>
 						</div>
 					</div>

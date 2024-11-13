@@ -494,7 +494,7 @@ pub fn get_post_list(site_id:String) -> Response {
             response.body = Some(serde_json::to_value(posts).expect("Attempted to serialize vector of posts in get_post_list"));
             response
         }
-        Err(err) => Response::fail(String::from("Could not find any posts for this site"))
+        Err(err) => Response::fail(format!("Error retreiving posts: {}", err ))
     }
 }
 
