@@ -10,6 +10,7 @@ pub mod response;
 use crate::commands::{
     check_token, create_site, get_site_details, list_sites, netlify_login, netlify_logout,
     refresh_sites, update_site,create_post, deploy_site, get_post_list, delete_site, get_post_details,
+    delete_post,
 };
 use dotenv::dotenv;
 
@@ -33,6 +34,7 @@ pub fn run() {
             get_post_list,
             delete_site,
             get_post_details,
+            delete_post,
         ])
         .plugin(tauri_plugin_dialog::init())
         .run(tauri::generate_context!())

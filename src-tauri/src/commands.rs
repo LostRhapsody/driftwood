@@ -551,6 +551,11 @@ pub fn get_post_list(site_id: String) -> Response {
     }
 }
 
+#[tauri::command]
+pub fn delete_post(site_id: String, post_name: String) -> Response {
+    Response::success(format!("Not yet implemented! Site: {}, post: {}", site_id, post_name))
+}
+
 /// Get all the sites for the user
 /// netlify: A Netlify instance
 /// Returns a vector of SiteDetails

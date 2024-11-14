@@ -99,6 +99,7 @@ const MarkdownEditor = ({
 	// all for getting site details from disk
 	const { toast } = useToast();
 	const [isAlertOpen, setIsAlertOpen] = useState(false);
+	const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 	const [postName, setPostName] = useState("");
 	const [site_details, set_site_details] = useState<WebsiteDetails>({
 		name: "",
@@ -179,6 +180,31 @@ const MarkdownEditor = ({
 
 		if (result) setMarkdownText(response.body.content);
 		else alert(response.message);
+	}
+
+	function confirm_delete(e: React.MouseEvent<HTMLButtonElement>) {
+		e.preventDefault();
+		setIsDeleteOpen(true);
+	}
+
+	async function delete_post(){
+		const response = await invoke<DriftResponse>("delete_post", {
+			siteId: site,
+			postName: postName,
+		});
+
+		const result = processResponse(response);
+
+		if(result) {
+			// navigate back to post list or edit site
+			if(post_name !== ""){
+				onReturnClick(site_details.id, true)
+			} else {
+				onReturnClick(site_details.id, false)
+			}
+		} else {
+			alert(response.message);
+		}
 	}
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
@@ -435,6 +461,24 @@ const MarkdownEditor = ({
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
+			<AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Delete Post?</AlertDialogTitle>
+						<AlertDialogDescription>
+							Are you sure you want to delete "{postName}"? There is no backup in place!
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<Button onClick={delete_post}>
+							Yes, delete {postName}.
+						</Button>
+						<Button onClick={() => setIsDeleteOpen(false)}>
+							Nevermind!
+						</Button>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 			<div className="w-full">
 				{/* Post details form */}
 				<div className="w-full bg-primary rounded-xl p-2 mb-4">
@@ -569,6 +613,9 @@ const MarkdownEditor = ({
 								) : (
 									<span>Create post</span>
 								)}
+							</Button>
+							<Button className="dark" onClick={confirm_delete}>
+								Delete Post
 							</Button>
 						</form>
 					</Form>
