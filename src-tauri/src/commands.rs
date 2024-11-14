@@ -364,7 +364,10 @@ pub fn create_post(post_data: String, site_data: String) -> Response {
 /// A Drift Reponse struct, the body contains the post data structure
 #[tauri::command]
 pub fn get_post_details(post_name: String, site_id: String) -> Response {
-    println!("Running get post details for site: {}, post name: {}", site_id, post_name);
+    println!(
+        "Running get post details for site: {}, post name: {}",
+        site_id, post_name
+    );
     let mut post = Post {
         title: post_name,
         date: String::from(""),
@@ -377,10 +380,13 @@ pub fn get_post_details(post_name: String, site_id: String) -> Response {
     match post {
         Ok(post) => {
             let mut response = Response::success(String::from("Read post from disk"));
-            response.body = Some(serde_json::to_value(post).expect("Failed to serialize Post to JSON in get_post_details"));
+            response.body = Some(
+                serde_json::to_value(post)
+                    .expect("Failed to serialize Post to JSON in get_post_details"),
+            );
             response
-        },
-        Err(e) => Response::fail(format!("Failed to read post from disk: {}", e))
+        }
+        Err(e) => Response::fail(format!("Failed to read post from disk: {}", e)),
     }
 }
 
@@ -553,7 +559,23 @@ pub fn get_post_list(site_id: String) -> Response {
 
 #[tauri::command]
 pub fn delete_post(site_id: String, post_name: String) -> Response {
-    Response::success(format!("Not yet implemented! Site: {}, post: {}", site_id, post_name))
+    println!("Deleting post {} for site {}", post_name, site_id);
+    let mut post = Post::new(post_name);
+    let _ = post.clean_filename();
+    println!("Post filename: {}", post.filename);
+    match get_single_site_details(site_id) {
+        Ok(site) => {
+            let site_path = site.build_site_path().expect("Failed to build site path");
+
+            let post_path = site_path.join("md_posts").join(format!("{}.md", post.filename));
+
+            match std::fs::remove_file(post_path) {
+                Ok(_) => Response::success(String::from("Post deleted successfully")),
+                Err(e) => Response::fail(format!("Failed to delete post: {}", e)),
+            }
+        }
+        Err(e) => Response::fail(format!("Failed to get site details: {}", e)),
+    }
 }
 
 /// Get all the sites for the user
@@ -675,13 +697,10 @@ fn get_single_site_details(site_id: String) -> Result<SiteDetails, String> {
 }
 
 fn load_posts_from_disk(site_id: String) -> Result<Vec<Post>, std::io::Error> {
-    println!("checking 0");
     let site = get_single_site_details(site_id).expect("failed to get site details");
     let site_path = site.build_site_path().expect("failed to get site path");
-    println!("checking 1.5");
     let post_path = site_path.join("md_posts");
     let mut post_vector: Vec<Post> = vec![];
-    println!("checking 1");
     if !post_path.exists() {
         println!("checking 1.5");
         return Err(std::io::Error::new(
@@ -689,7 +708,6 @@ fn load_posts_from_disk(site_id: String) -> Result<Vec<Post>, std::io::Error> {
             "The site does not contain any posts",
         ));
     }
-    println!("checking 2");
 
     for md_post in std::fs::read_dir(post_path)? {
         let md_post = md_post?;
