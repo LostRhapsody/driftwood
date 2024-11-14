@@ -614,7 +614,7 @@ const MarkdownEditor = ({
 									<span>Create post</span>
 								)}
 							</Button>
-							<Button className="dark" onClick={confirm_delete}>
+							<Button className="dark ms-4" onClick={confirm_delete} variant="destructive">
 								Delete Post
 							</Button>
 						</form>
