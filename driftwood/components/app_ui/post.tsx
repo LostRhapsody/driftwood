@@ -109,14 +109,6 @@ const MarkdownEditor = ({
 		screenshot_url: "",
 		password: "",
 	});
-	const [post_details, set_post_details] = useState<Post>({
-		title: "",
-		tags: [],
-		date: "",
-		image: "",
-		filename: "",
-		excerpt: "",
-	});
 
 	// Create site form defition
 	const form = useForm<z.infer<typeof formSchema>>({
@@ -180,14 +172,12 @@ const MarkdownEditor = ({
 
 		const response = await invoke<DriftResponse<Post>>("get_post_details", {
 			siteId: site,
-			postName: postName,
+			postName: post_name,
 		});
 
 		const result = processResponse(response);
-		console.log(response);
-		console.log(result);
 
-		if (result) set_post_details(response.body);
+		if (result) setMarkdownText(response.body.content);
 		else alert(response.message);
 	}
 
@@ -574,7 +564,11 @@ const MarkdownEditor = ({
 								)}
 							/>
 							<Button className="dark" type="submit">
-								Create post
+								{postName !== "" ? (
+									<span>Save post</span>
+								) : (
+									<span>Create post</span>
+								)}
 							</Button>
 						</form>
 					</Form>

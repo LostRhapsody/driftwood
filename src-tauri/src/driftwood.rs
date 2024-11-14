@@ -58,7 +58,7 @@ pub struct SiteDetails {
     pub screenshot_url: Option<String>,
     pub password: Option<String>,
     pub required: Option<Vec<String>>,
-    pub favicon_file: Option<String> // only used when updating the site from UI, not sent to Netlify
+    pub favicon_file: Option<String>, // only used when updating the site from UI, not sent to Netlify
 }
 
 /// NewSite struct
@@ -228,12 +228,11 @@ impl Post {
             .context("Failed to open file.")?;
 
         let post_content = format!(
-            "date:{}\nexcerpt:{}\nimage:{}\ntags:{}\n# {}\n{}",
+            "date:{}\nexcerpt:{}\nimage:{}\ntags:{}\n{}",
             self.date,
             "Write cool excerpt here",
             "https://images.unsplash.com/photo-1615147342761-9238e15d8b96?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1001&q=80",
             self.tags.join(","),
-            self.title,
             post_text,
         );
 
@@ -246,6 +245,82 @@ impl Post {
         );
 
         Ok(())
+    }
+
+    /// Reads in a post file and returns the Post
+    pub fn read_post_from_disk(&mut self, site_id: String) -> Result<Post> {
+        println!("Reading post from disk");
+        println!("Post name: {}", self.title);
+        // At this point, we've probably only set the Post's title, so 'create' the filename
+        // and set it as well
+        _ = self.clean_filename();
+        println!("Post filename: {}", self.filename);
+
+        // Creating a mostly empty SiteDetails instance, we only need the id for build_post_path.
+        let site_details = SiteDetails {
+            name: None,
+            domain: None,
+            id: Some(site_id),
+            ssl: None,
+            url: None,
+            screenshot_url: None,
+            password: None,
+            required: None,
+            favicon_file: None,
+        };
+
+        let post_path = self.build_post_path(&site_details)?;
+
+        println!("post_path: {}", post_path.display());
+
+        // Read file content
+        let content = fs::read_to_string(&post_path).context("Failed to read post file")?;
+
+        // Parse metadata and content
+        let mut date = String::new();
+        let mut tags = Vec::new();
+        let mut image = None;
+        let mut _excerpt = String::new();
+        let mut post_content = Vec::new();
+        let mut in_content = false;
+
+        for line in content.lines() {
+            if line.starts_with("date:") {
+                date = line.replace("date:", "").trim().to_string();
+            } else if line.starts_with("tags:") {
+                tags = line
+                    .replace("tags:", "")
+                    .trim()
+                    .split(',')
+                    .map(|s| s.trim().to_string())
+                    .collect();
+            } else if line.starts_with("image:") {
+                image = Some(line.replace("image:", "").trim().to_string());
+            } else if line.starts_with("excerpt:") {
+                _excerpt = line.replace("excerpt:", "").trim().to_string();
+            } else if line.starts_with("# ") {
+                in_content = true;
+                post_content.push(line);
+            } else if in_content {
+                post_content.push(line);
+            }
+        }
+
+        // Join content lines with proper newlines
+        let content = post_content.join("\n");
+
+        let post = Post {
+            title: self.title.clone(),
+            date,
+            content,
+            filename: self.filename.clone(),
+            image,
+            tags,
+        };
+
+        println!("Post data: {:?}", post);
+
+        Ok(post)
     }
 
     pub fn commit_post_to_repo(site: &SiteDetails, message: &str) -> Result<()> {
@@ -263,10 +338,7 @@ impl Post {
 
 impl SiteDetails {
     pub fn build_site_path(&self) -> Result<PathBuf> {
-        let site_path = PathBuf::from(format!(
-            "sites/{}",
-            self.id.clone().unwrap()
-        ));
+        let site_path = PathBuf::from(format!("sites/{}", self.id.clone().unwrap()));
         Ok(site_path)
     }
 

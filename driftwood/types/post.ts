@@ -5,4 +5,5 @@ export type Post = {
 	image: string;
 	filename: string;
 	excerpt: string;
+	content: string;
 };

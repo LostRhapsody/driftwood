@@ -1,9 +1,8 @@
 use crate::driftwood::{read_and_parse, template_html, NewSite, Post, SiteDetails};
 use crate::netlify::Netlify;
 use crate::response::{
+    CreateSiteResponse, // Request,
     Response,
-    CreateSiteResponse
-    // Request,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{from_str, Value};
@@ -39,8 +38,12 @@ pub fn netlify_logout() -> Response {
     let token_file = Path::new("netlify_token.json");
     match token_file.exists() {
         true => match std::fs::remove_file(token_file) {
-            Ok(_) => Response::success(String::from("Logged out and removed user data from the system.")),
-            Err(_) => Response::fail(String::from("Logged out, but failed to remove user data from system.")),
+            Ok(_) => Response::success(String::from(
+                "Logged out and removed user data from the system.",
+            )),
+            Err(_) => Response::fail(String::from(
+                "Logged out, but failed to remove user data from system.",
+            )),
         },
         false => Response::fail(String::from("Could not log out.")),
     }
@@ -61,8 +64,12 @@ pub fn create_site(new_site: &str) -> Response {
     println!("Creating a site");
     println!("new site args: {}", new_site);
 
-    let site: NewSite = serde_json::from_str(new_site).map_err(|e| e.to_string()).expect("create_site requires site data from client.");
-    let netlify = Netlify::new().map_err(|e| e.to_string()).expect("Failed to create a netlify client.");
+    let site: NewSite = serde_json::from_str(new_site)
+        .map_err(|e| e.to_string())
+        .expect("create_site requires site data from client.");
+    let netlify = Netlify::new()
+        .map_err(|e| e.to_string())
+        .expect("Failed to create a netlify client.");
 
     match netlify.create_site(site.clone()) {
         Ok(site_details) => {
@@ -76,13 +83,16 @@ pub fn create_site(new_site: &str) -> Response {
             Response {
                 result: Some(true),
                 status: Some(200),
-                message: Some(String::from("New site created successfully! 🎉 Let's start building!")),
-                body: Some(serde_json::to_value(create_site_response).expect("Tried to serialize create site response in create_site")),
+                message: Some(String::from(
+                    "New site created successfully! 🎉 Let's start building!",
+                )),
+                body: Some(
+                    serde_json::to_value(create_site_response)
+                        .expect("Tried to serialize create site response in create_site"),
+                ),
             }
-
-        },
+        }
         Err(err) => {
-
             let create_site_response = CreateSiteResponse {
                 name: None,
                 title: Some(String::from("Failed to create site")),
@@ -92,7 +102,10 @@ pub fn create_site(new_site: &str) -> Response {
                 result: Some(false),
                 status: Some(500),
                 message: Some(err.to_string()),
-                body: Some(serde_json::to_value(create_site_response).expect("Tried to serialize create site response in create_site")),
+                body: Some(
+                    serde_json::to_value(create_site_response)
+                        .expect("Tried to serialize create site response in create_site"),
+                ),
             }
         }
     }
@@ -100,15 +113,17 @@ pub fn create_site(new_site: &str) -> Response {
 
 #[tauri::command]
 pub fn delete_site(site_id: &str) -> Response {
-    println!("Deleting site: {}", site_id );
+    println!("Deleting site: {}", site_id);
 
-    let netlify = Netlify::new().map_err(|e| e.to_string()).expect("Failed to create netlify client in delete_site");
+    let netlify = Netlify::new()
+        .map_err(|e| e.to_string())
+        .expect("Failed to create netlify client in delete_site");
 
     match netlify.delete_site(site_id) {
         Ok(_site_details) => {
             refresh_sites(false);
             Response::success(String::from("Site deleted!"))
-        },
+        }
         Err(err) => Response::fail(err.to_string()),
     }
 }
@@ -118,19 +133,24 @@ pub fn update_site(site: &str) -> Response {
     println!("Updating a site");
     println!("Updated site args: {}", site);
 
-    let site: SiteDetails = serde_json::from_str(site).map_err(|e| e.to_string()).expect("Need site details from client, in update_site");
-    let netlify = Netlify::new().map_err(|e| e.to_string()).expect("Failed to create netlify client in site_details.");
+    let site: SiteDetails = serde_json::from_str(site)
+        .map_err(|e| e.to_string())
+        .expect("Need site details from client, in update_site");
+    let netlify = Netlify::new()
+        .map_err(|e| e.to_string())
+        .expect("Failed to create netlify client in site_details.");
 
     match netlify.update_site(site.clone()) {
         Ok(_site_details) => {
             refresh_sites(false);
             let favicon = site.clone().favicon_file.unwrap_or_default();
             if favicon != "" {
-                site.move_favicon_to_site_dir(favicon).expect("Tried moving new favicon file, failed.");
+                site.move_favicon_to_site_dir(favicon)
+                    .expect("Tried moving new favicon file, failed.");
             }
             Response::success(String::from("Site updated successfully! 🎉"))
-        },
-        Err(err) => Response::fail(err.to_string())
+        }
+        Err(err) => Response::fail(err.to_string()),
     }
 }
 
@@ -144,7 +164,10 @@ pub fn refresh_sites(return_site: bool) -> Response {
             let mut sites_json = Vec::new();
 
             for site in site_details {
-                sites_json.push(serde_json::to_value(site).expect("Failed to serialize site data in refresh_sites"));
+                sites_json.push(
+                    serde_json::to_value(site)
+                        .expect("Failed to serialize site data in refresh_sites"),
+                );
             }
 
             if let Err(e) = save_json_to_file("sites/sites.json", sites_json.clone()) {
@@ -156,7 +179,10 @@ pub fn refresh_sites(return_site: bool) -> Response {
                     result: Some(true),
                     status: Some(200),
                     message: Some(String::from("Refreshed sites")),
-                    body: Some(serde_json::to_value(sites_json).expect("Failed to serialize site array in refresh_sites"))
+                    body: Some(
+                        serde_json::to_value(sites_json)
+                            .expect("Failed to serialize site array in refresh_sites"),
+                    ),
                 }
             } else {
                 Response::success(String::from("Refreshed sites"))
@@ -186,10 +212,7 @@ pub fn get_site_details(site_id: String) -> Response {
                 file_name
             );
 
-            println!(
-                "Loading favicon from file, full_path: {} ",
-                full_path
-            );
+            println!("Loading favicon from file, full_path: {} ", full_path);
 
             // if the path exists first and if it doesn't, create it.
             // this will trigger "contents.is_empty" and we'll retrieve it from the API
@@ -209,9 +232,11 @@ pub fn get_site_details(site_id: String) -> Response {
             result.favicon_file = Some(favicon);
 
             let mut response = Response::success(String::from("Retrieved site details"));
-            response.body = Some(serde_json::to_value(result).expect("Failed to serialize SiteDetails in get_site_details"));
+            response.body = Some(
+                serde_json::to_value(result)
+                    .expect("Failed to serialize SiteDetails in get_site_details"),
+            );
             response
-
         }
         Err(err) => Response::fail(err.to_string()),
     }
@@ -237,17 +262,24 @@ pub fn list_sites() -> Response {
                     let mut sites_json = Vec::new();
 
                     for site in site_details {
-                        sites_json.push(serde_json::to_value(site).expect("Failed to serialize site data in refresh_sites"));
+                        sites_json.push(
+                            serde_json::to_value(site)
+                                .expect("Failed to serialize site data in refresh_sites"),
+                        );
                     }
 
                     let mut response = Response::success(String::from("Refreshed sites"));
-                    response.body = Some(serde_json::to_value(sites_json).expect("Failed to serialize site json in refresh_sites"));
+                    response.body = Some(
+                        serde_json::to_value(sites_json)
+                            .expect("Failed to serialize site json in refresh_sites"),
+                    );
                     response
-
                 }
                 Err(e) => {
                     println!("Error: {:?}", e);
-                    Response::fail(String::from("Could not create a netlify client in refresh_sites"))
+                    Response::fail(String::from(
+                        "Could not create a netlify client in refresh_sites",
+                    ))
                 }
             }
         }
@@ -331,9 +363,25 @@ pub fn create_post(post_data: String, site_data: String) -> Response {
 ///
 /// A Drift Reponse struct, the body contains the post data structure
 #[tauri::command]
-pub fn get_post_details(post_name:String, site_id: String) -> Response {
-    println!("Getting details for post {}, site {}", post_name, site_id);
-    Response::fail(String::from("Not yet supported!"))
+pub fn get_post_details(post_name: String, site_id: String) -> Response {
+    println!("Running get post details for site: {}, post name: {}", site_id, post_name);
+    let mut post = Post {
+        title: post_name,
+        date: String::from(""),
+        content: String::from(""),
+        filename: String::from(""),
+        image: None,
+        tags: vec![],
+    };
+    let post = post.read_post_from_disk(site_id);
+    match post {
+        Ok(post) => {
+            let mut response = Response::success(String::from("Read post from disk"));
+            response.body = Some(serde_json::to_value(post).expect("Failed to serialize Post to JSON in get_post_details"));
+            response
+        },
+        Err(e) => Response::fail(format!("Failed to read post from disk: {}", e))
+    }
 }
 
 #[tauri::command]
@@ -429,7 +477,9 @@ pub fn deploy_site(site_id: String) -> Response {
             } else {
                 let sha_error = sha1_result.err().unwrap();
                 println!("> Error: {}", sha_error);
-                return Response::fail(String::from("Failed to delete site, error in response from Netlify"));
+                return Response::fail(String::from(
+                    "Failed to delete site, error in response from Netlify",
+                ));
             }
 
             // unwrap the result to get the FileHashes struct
@@ -481,20 +531,23 @@ pub fn deploy_site(site_id: String) -> Response {
 
             Response::success(String::from("Deployed site successfully! 🚀"))
         }
-        Err(e) => Response::fail(format!("Failed to deploy site: {}", e.to_string()))
+        Err(e) => Response::fail(format!("Failed to deploy site: {}", e.to_string())),
     }
 }
 
 #[tauri::command]
-pub fn get_post_list(site_id:String) -> Response {
+pub fn get_post_list(site_id: String) -> Response {
     let posts = load_posts_from_disk(site_id);
     match posts {
-        Ok(posts) =>  {
+        Ok(posts) => {
             let mut response = Response::success(String::from("Retrieved sites"));
-            response.body = Some(serde_json::to_value(posts).expect("Attempted to serialize vector of posts in get_post_list"));
+            response.body = Some(
+                serde_json::to_value(posts)
+                    .expect("Attempted to serialize vector of posts in get_post_list"),
+            );
             response
         }
-        Err(err) => Response::fail(format!("Error retreiving posts: {}", err ))
+        Err(err) => Response::fail(format!("Error retreiving posts: {}", err)),
     }
 }
 
@@ -624,16 +677,23 @@ fn load_posts_from_disk(site_id: String) -> Result<Vec<Post>, std::io::Error> {
     let post_path = site_path.join("md_posts");
     let mut post_vector: Vec<Post> = vec![];
     println!("checking 1");
-    if !post_path.exists(){
-    println!("checking 1.5");
-        return Err(std::io::Error::new(std::io::ErrorKind::Other, "The site does not contain any posts"))
+    if !post_path.exists() {
+        println!("checking 1.5");
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "The site does not contain any posts",
+        ));
     }
     println!("checking 2");
 
     for md_post in std::fs::read_dir(post_path)? {
         let md_post = md_post?;
         let path = md_post.path();
-        let filename = path.file_name().expect("Tried to get file name of post").to_string_lossy().into_owned();
+        let filename = path
+            .file_name()
+            .expect("Tried to get file name of post")
+            .to_string_lossy()
+            .into_owned();
         let file = std::fs::read_to_string(path)?;
 
         let mut title = String::new();
@@ -646,19 +706,21 @@ fn load_posts_from_disk(site_id: String) -> Result<Vec<Post>, std::io::Error> {
         for line in file.lines() {
             line_counter += 1;
             match line_counter {
-                1 => date = line.trim().replace("date:",""),
+                1 => date = line.trim().replace("date:", ""),
                 2 => continue,
-                3 => image = Some(line.trim().replace("image:","")),
-                4 =>
-                    tags = line.replace("tags:", "")
+                3 => image = Some(line.trim().replace("image:", "")),
+                4 => {
+                    tags = line
+                        .replace("tags:", "")
                         .trim()
                         .split(',')
                         .map(|s| s.trim().to_string())
-                        .collect(),
+                        .collect()
+                }
                 5 => title = line.trim().replace("# ", ""),
                 // TODO - We don't actually need content for this one, so break here
                 // but, for the single post load function, we'll need to do this.
-                _ => content += line.trim()
+                _ => content += line.trim(),
             }
         }
 
