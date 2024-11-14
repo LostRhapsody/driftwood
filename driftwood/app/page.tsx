@@ -105,7 +105,7 @@ export default function Home() {
 					/>
 				);
 			case "list_posts":
-				return <Posts site={currentSite} onEditClick={handlePostEditClick} />;
+				return <Posts site={currentSite} onEditClick={handlePostEditClick} onReturnClick={handleEditSite} />;
 			default:
 				return <div>Home sweet home default</div>;
 		}

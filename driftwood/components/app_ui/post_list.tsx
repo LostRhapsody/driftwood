@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 import PostCard from "@/components/app_ui/post_card";
 import {
 	type DriftResponse,
@@ -13,7 +14,8 @@ import type {Post} from "@/types/post";
 export default function Posts({
 	site,
 	onEditClick,
-}: { site: string; onEditClick: (post_name: string) => void }) {
+	onReturnClick,
+}: { site: string; onEditClick: (post_name: string) => void; onReturnClick: (site_id: string) => void; }) {
 	const [data, setData] = useState<Post[] | null>(null);
 	const { toast } = useToast();
 
@@ -39,6 +41,11 @@ export default function Posts({
 				<h1 className="text-4xl pb-2">Posts</h1>
 			</div>
 			{data && <PostCard posts={data} onEditClick={onEditClick} />}
+			<div className="flex gap-8">
+				<Button onClick={() => onReturnClick(site)}>
+						Return to site
+				</Button>
+			</div>
 		</div>
 	);
 }
