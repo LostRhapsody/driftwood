@@ -228,7 +228,8 @@ impl Post {
             .context("Failed to open file.")?;
 
         let post_content = format!(
-            "date:{}\nexcerpt:{}\nimage:{}\ntags:{}\n{}",
+            "title:{}\ndate:{}\nexcerpt:{}\nimage:{}\ntags:{}\n{}",
+            self.title,
             self.date,
             "Write cool excerpt here",
             "https://images.unsplash.com/photo-1615147342761-9238e15d8b96?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1001&q=80",
@@ -277,6 +278,7 @@ impl Post {
         let content = fs::read_to_string(&post_path).context("Failed to read post file")?;
 
         // Parse metadata and content
+        let mut title: String = String::new();
         let mut date = String::new();
         let mut tags = Vec::new();
         let mut image = None;
@@ -285,7 +287,10 @@ impl Post {
         let mut in_content = false;
 
         for line in content.lines() {
-            if line.starts_with("date:") {
+            if line.starts_with("title:") {
+                title = line.replace("title:", "").trim().to_string();
+            }
+            else if line.starts_with("date:") {
                 date = line.replace("date:", "").trim().to_string();
             } else if line.starts_with("tags:") {
                 tags = line
@@ -310,7 +315,7 @@ impl Post {
         let content = post_content.join("\n");
 
         let post = Post {
-            title: self.title.clone(),
+            title,
             date,
             content,
             filename: self.filename.clone(),

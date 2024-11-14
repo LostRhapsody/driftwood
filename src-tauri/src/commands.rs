@@ -706,10 +706,10 @@ fn load_posts_from_disk(site_id: String) -> Result<Vec<Post>, std::io::Error> {
         for line in file.lines() {
             line_counter += 1;
             match line_counter {
-                1 => date = line.trim().replace("date:", ""),
-                2 => continue,
-                3 => image = Some(line.trim().replace("image:", "")),
-                4 => {
+                2 => date = line.trim().replace("date:", ""),
+                3 => continue,
+                4 => image = Some(line.trim().replace("image:", "")),
+                5 => {
                     tags = line
                         .replace("tags:", "")
                         .trim()
@@ -717,7 +717,7 @@ fn load_posts_from_disk(site_id: String) -> Result<Vec<Post>, std::io::Error> {
                         .map(|s| s.trim().to_string())
                         .collect()
                 }
-                5 => title = line.trim().replace("# ", ""),
+                1 => title = line.trim().replace("title:", ""),
                 // TODO - We don't actually need content for this one, so break here
                 // but, for the single post load function, we'll need to do this.
                 _ => content += line.trim(),
