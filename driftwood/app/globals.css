@@ -378,6 +378,7 @@ body {
 }
 
 .mdxeditor-toolbar button {
+  @apply bg-inherit p-2 rounded;
   @apply hover:bg-secondary p-2 rounded;
 }
 
@@ -419,4 +420,36 @@ body {
 /* Link styling */
 .mdxeditor a {
   @apply text-blue-400 hover:text-blue-300;
+}
+
+/* Fix dialog positioning */
+.mdxeditor-popup-container>div {
+  /* left: 25% !important; */
+  z-index: 50;
+  background-color: rgb(23, 23, 23) !important;
+  border: 1px solid rgb(55, 65, 81);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  min-width: 300px;
+}
+
+.mdxeditor-popup-container>div>div {
+  background-color: rgb(23, 23, 23) !important;
+	border-color: rgb(23, 23, 23) !important;
+}
+
+/* Style dialog inputs */
+.mdxeditor-popup-container>div input {
+  background-color: rgb(38, 38, 38);
+  border: 1px solid rgb(55, 65, 81);
+  border-radius: 0.25rem;
+  padding: 0.5rem;
+  width: 90%;
+  color: white;
+  margin: 0.5rem 0;
+}
+
+/* Style popover buttons */
+.mdxeditor-popup-container button {
+	color:white;
 }

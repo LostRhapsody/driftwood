@@ -1,6 +1,5 @@
-// TODO - Submit doesn't grab text from markdown editor yet
-import { useState, useEffect, Suspense } from "react";
-import dynamic from "next/dynamic";
+/// TODO - When at the far left of the screen, the popover sometimes can't be seen for insert link.
+import { useState, useEffect, Suspense, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -16,7 +15,6 @@ import {
 } from "@/components/ui/form";
 
 import { ChevronLeft } from "lucide-react";
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -45,18 +43,37 @@ interface WebsiteDetails {
 
 import type { Post } from "@/types/post";
 
+import {
+	MDXEditor,
+	headingsPlugin,
+	listsPlugin,
+	quotePlugin,
+	thematicBreakPlugin,
+	markdownShortcutPlugin,
+	linkPlugin,
+	imagePlugin,
+	frontmatterPlugin,
+	toolbarPlugin,
+	diffSourcePlugin,
+	linkDialogPlugin,
+	UndoRedo,
+	BoldItalicUnderlineToggles,
+	BlockTypeSelect,
+	CodeToggle,
+	CreateLink,
+	InsertCodeBlock,
+	InsertImage,
+	InsertThematicBreak,
+	ListsToggle,
+	type MDXEditorMethods,
+} from "@mdxeditor/editor";
+
+import "@mdxeditor/editor/style.css";
+
 // create site for schema
 const formSchema = z.object({
 	post_name: z.string().min(1),
 });
-
-const EditorComp = dynamic(() => import("@/components/app_ui/editor"), {
-	ssr: false,
-});
-
-const markdown = `
-Hello **world**!
-`;
 
 const MarkdownEditor = ({
 	site,
@@ -68,18 +85,14 @@ const MarkdownEditor = ({
 	post_name: string;
 	onReturnClick: (site_details: string, show_post_list: boolean) => void;
 }) => {
-	/// TODO - if post_name is present, retrieve post details from disk
-	/// TODO - if post_name is present, return to post list, not edit site.
-	console.log("site: ", site);
-	console.log("post_name: ", post_name);
-	console.log("onReturnClick: ", onReturnClick);
 
 	// all for getting site details from disk
 	const { toast } = useToast();
 	const [isAlertOpen, setIsAlertOpen] = useState(false);
 	const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 	const [postName, setPostName] = useState("");
-	const [markdownContent, setMarkdownContent] = useState(markdown || '');
+	const [markdownContent, setMarkdownContent] = useState("");
+	const mdxEditorRef = useRef<MDXEditorMethods>(null);
 	const [site_details, set_site_details] = useState<WebsiteDetails>({
 		name: "",
 		domain: "",
@@ -96,12 +109,13 @@ const MarkdownEditor = ({
 	});
 
 	const create_post = async (values: z.infer<typeof formSchema>) => {
-		console.log("Creating post");
-		console.log("Post values: ", values);
-		console.log("Post text: ", markdownContent);
+
+		const markdownText = mdxEditorRef.current?.getMarkdown();
+		if(markdownText) setMarkdownContent(markdownText);
+
 		const post_data = {
 			post_name: values.post_name,
-			post_text: markdownContent,
+			post_text: markdownText,
 		};
 
 		setPostName(post_data.post_name);
@@ -147,7 +161,6 @@ const MarkdownEditor = ({
 
 	async function get_post_details() {
 		setPostName(post_name);
-		console.log(form);
 		form.setValue("post_name", postName);
 
 		const response = await invoke<DriftResponse<Post>>("get_post_details", {
@@ -157,8 +170,12 @@ const MarkdownEditor = ({
 
 		const result = processResponse(response);
 
-		if (result) setMarkdownContent(response.body.content);
+		if (result) {
+			setMarkdownContent(response.body.content);
+			mdxEditorRef.current?.setMarkdown(response.body.content);
+		}
 		else alert(response.message);
+
 	}
 
 	function confirm_delete(e: React.MouseEvent<HTMLButtonElement>) {
@@ -281,17 +298,7 @@ const MarkdownEditor = ({
 							&nbsp;Return to Edit site
 						</Button>
 					)}
-				</div>
-
-				{/* Markdown Editor */}
-				<div className="dark" style={{ border: "1px solid black" }}>
-					<Suspense fallback={null}>
-						<EditorComp markdown={markdown} />
-					</Suspense>
-				</div>
-
-				{/* Submit post */}
-				<div className="w-full bg-primary rounded-xl p-2 mt-4">
+					<hr className="my-4"/>
 					<Form {...form}>
 						<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
 							<FormField
@@ -324,6 +331,47 @@ const MarkdownEditor = ({
 							</Button>
 						</form>
 					</Form>
+				</div>
+
+				{/* Markdown Editor */}
+				<div className={"dark w-full prose prose-invert max-w-none pb-24"}>
+					<MDXEditor
+						ref={mdxEditorRef}
+						markdown={markdownContent || ""}
+						// onChange={(content) => {
+						// 	setMarkdownContent(content);
+						// }}
+						plugins={[
+							headingsPlugin(),
+							listsPlugin(),
+							quotePlugin(),
+							thematicBreakPlugin(),
+							markdownShortcutPlugin(),
+							linkPlugin(),
+							imagePlugin(),
+							frontmatterPlugin(),
+							linkDialogPlugin(),
+							toolbarPlugin({
+								toolbarClassName: "my-classname",
+								toolbarContents: () => (
+									<>
+										{" "}
+										<UndoRedo />
+										<BoldItalicUnderlineToggles />
+										<BlockTypeSelect/>
+										<CodeToggle/>
+										<CreateLink/>
+										<InsertCodeBlock/>
+										<InsertImage/>
+										<InsertThematicBreak/>
+										<ListsToggle/>
+									</>
+								),
+							}),
+							diffSourcePlugin(),
+						]}
+						contentEditableClassName="min-h-[200px] p-4 prose prose-invert max-w-none"
+					/>
 				</div>
 			</div>
 		</>

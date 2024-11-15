@@ -284,7 +284,6 @@ impl Post {
         let mut image = None;
         let mut _excerpt = String::new();
         let mut post_content = Vec::new();
-        let mut in_content = false;
 
         for line in content.lines() {
             if line.starts_with("title:") {
@@ -303,10 +302,7 @@ impl Post {
                 image = Some(line.replace("image:", "").trim().to_string());
             } else if line.starts_with("excerpt:") {
                 _excerpt = line.replace("excerpt:", "").trim().to_string();
-            } else if line.starts_with("# ") {
-                in_content = true;
-                post_content.push(line);
-            } else if in_content {
+            } else {
                 post_content.push(line);
             }
         }
