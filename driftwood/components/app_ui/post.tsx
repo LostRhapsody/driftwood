@@ -1,22 +1,10 @@
-import { useState, useEffect } from "react";
+// TODO - Submit doesn't grab text from markdown editor yet
+import { useState, useEffect, Suspense } from "react";
+import dynamic from "next/dynamic";
 import { invoke } from "@tauri-apps/api/core";
-import ReactTextareaAutosize from "react-textarea-autosize";
 import { useToast } from "@/hooks/use-toast";
-import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-	ContextMenu,
-	ContextMenuContent,
-	ContextMenuItem,
-	ContextMenuTrigger,
-} from "@/components/ui/context-menu";
 import {
 	Form,
 	FormControl,
@@ -27,25 +15,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 
-import { open } from "@tauri-apps/plugin-shell";
-import {
-	List,
-	ListOrdered,
-	Bold,
-	Italic,
-	Heading1,
-	Heading2,
-	Heading3,
-	Heading4,
-	Heading5,
-	Heading6,
-	Quote,
-	Code,
-	Braces,
-	Link,
-	Image,
-	ChevronLeft,
-} from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -80,6 +50,14 @@ const formSchema = z.object({
 	post_name: z.string().min(1),
 });
 
+const EditorComp = dynamic(() => import("@/components/app_ui/editor"), {
+	ssr: false,
+});
+
+const markdown = `
+Hello **world**!
+`;
+
 const MarkdownEditor = ({
 	site,
 	post_name,
@@ -101,6 +79,7 @@ const MarkdownEditor = ({
 	const [isAlertOpen, setIsAlertOpen] = useState(false);
 	const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 	const [postName, setPostName] = useState("");
+	const [markdownContent, setMarkdownContent] = useState(markdown || '');
 	const [site_details, set_site_details] = useState<WebsiteDetails>({
 		name: "",
 		domain: "",
@@ -119,10 +98,10 @@ const MarkdownEditor = ({
 	const create_post = async (values: z.infer<typeof formSchema>) => {
 		console.log("Creating post");
 		console.log("Post values: ", values);
-		console.log("Post text: ", markdownText);
+		console.log("Post text: ", markdownContent);
 		const post_data = {
 			post_name: values.post_name,
-			post_text: markdownText,
+			post_text: markdownContent,
 		};
 
 		setPostName(post_data.post_name);
@@ -178,7 +157,7 @@ const MarkdownEditor = ({
 
 		const result = processResponse(response);
 
-		if (result) setMarkdownText(response.body.content);
+		if (result) setMarkdownContent(response.body.content);
 		else alert(response.message);
 	}
 
@@ -187,7 +166,7 @@ const MarkdownEditor = ({
 		setIsDeleteOpen(true);
 	}
 
-	async function delete_post(){
+	async function delete_post() {
 		const response = await invoke<DriftResponse>("delete_post", {
 			siteId: site,
 			postName: postName,
@@ -195,12 +174,12 @@ const MarkdownEditor = ({
 
 		const result = processResponse(response);
 
-		if(result) {
+		if (result) {
 			// navigate back to post list or edit site
-			if(post_name !== ""){
-				onReturnClick(site_details.id, true)
+			if (post_name !== "") {
+				onReturnClick(site_details.id, true);
 			} else {
-				onReturnClick(site_details.id, false)
+				onReturnClick(site_details.id, false);
 			}
 		} else {
 			alert(response.message);
@@ -233,203 +212,6 @@ const MarkdownEditor = ({
 			});
 		}
 	}, [postName, form]);
-
-	const [markdownText, setMarkdownText] = useState("");
-
-	const insertAtCursor = (tag: string) => {
-		const textarea = document.getElementById("textarea") as HTMLTextAreaElement;
-		const selectionStart = textarea?.selectionStart || 0;
-		const selectionEnd = textarea?.selectionEnd || 0;
-		const placeholder = markdownText.slice(selectionStart, selectionEnd);
-
-		// Store current scorll position to restore later
-		const scrollPos = textarea.scrollTop;
-
-		let updatedText = "";
-		if (tag === "**" || tag === "*" || tag === "`") {
-			updatedText = `${markdownText.slice(0, selectionStart)}${tag}${placeholder}${tag}${markdownText.slice(selectionEnd)}`;
-		} else if (tag === "```") {
-			updatedText = `${markdownText.slice(0, selectionStart)}${tag}\n${placeholder}\n${tag}\n${markdownText.slice(selectionEnd)}`;
-		} else {
-			updatedText = `${markdownText.slice(0, selectionStart)}${tag}${placeholder}${markdownText.slice(selectionEnd)}`;
-		}
-
-		// having issues with history, ctrl+z, ctrl+y, going to have to setup
-		// my own history buffer. That's fine. This doens't fix it.
-		textarea.value = updatedText;
-
-		setTimeout(() => {
-			textarea.selectionStart = selectionStart + tag.length;
-			textarea.selectionEnd = selectionEnd + tag.length;
-			// restore scroll pos
-			textarea.scrollTop = scrollPos;
-		}, 0);
-
-		// setMarkdownText(updatedText);
-	};
-
-	const toolbarButtons = [
-		{
-			tooltip: "Bold text, ctrl+b",
-			id: "bold",
-			label: <Bold />,
-			tag: "**",
-			shortcut: "ctrl+b",
-		},
-		{
-			tooltip: "Italicize text, ctrl+i",
-			id: "italic",
-			label: <Italic />,
-			tag: "*",
-			shortcut: "ctrl+i",
-		},
-		{
-			tooltip: "Insert heading 1, right click for more options, ctrl+1",
-			id: "heading1",
-			label: <Heading1 />,
-			tag: "# ",
-			shortcut: "ctrl+1",
-		},
-		{
-			tooltip: "Ordered list, ctrl+shift+o",
-			id: "ol",
-			label: <ListOrdered />,
-			tag: "1.",
-			shortcut: "ctrl+shift+o",
-		},
-		{
-			tooltip: "Unordered list, ctrl+shift+u",
-			id: "ul",
-			label: <List />,
-			tag: "-",
-			shortcut: "ctrl+shift+u",
-		},
-		{
-			tooltip: "Insert quote, ctrl+shift+q",
-			id: "quote",
-			label: <Quote />,
-			tag: "> ",
-			shortcut: "ctrl+shift+q",
-		},
-		{
-			tooltip: "Insert inline code, ctrl+shift+c",
-			id: "code",
-			label: <Code />,
-			tag: "`",
-			shortcut: "ctrl+shift+c",
-		},
-		{
-			tooltip: "Insert codeblock, ctrl+shift+b",
-			id: "codeblock",
-			label: <Braces />,
-			tag: "```",
-			shortcut: "ctrl+shift+b",
-		},
-		{
-			tooltip: "Insert link, ctrl+k",
-			id: "link",
-			label: <Link />,
-			tag: "[Link Text](http://)",
-			shortcut: "ctrl+k",
-		},
-		{
-			tooltip: "Insert image, ctrl+shift+i",
-			id: "image",
-			label: <Image />,
-			tag: "![Alt Text](http://)",
-			shortcut: "ctrl+shift+i",
-		},
-	];
-
-	const headers = [
-		{
-			tooltip: "Insert Heading 1",
-			id: "heading1",
-			label: <Heading1 />,
-			tag: "# ",
-		},
-		{
-			tooltip: "Insert Heading 2",
-			id: "heading2",
-			label: <Heading2 />,
-			tag: "# ",
-		},
-		{
-			tooltip: "Insert Heading 3",
-			id: "heading3",
-			label: <Heading3 />,
-			tag: "# ",
-		},
-		{
-			tooltip: "Insert Heading 4",
-			id: "heading4",
-			label: <Heading4 />,
-			tag: "# ",
-		},
-		{
-			tooltip: "Insert Heading 5",
-			id: "heading5",
-			label: <Heading5 />,
-			tag: "# ",
-		},
-		{
-			tooltip: "Insert Heading 6",
-			id: "heading6",
-			label: <Heading6 />,
-			tag: "# ",
-		},
-	];
-
-	const shortcuts = [
-		{ shortcut: "ctrl+b", tag: "**" }, // Bold
-		{ shortcut: "ctrl+i", tag: "*" }, // Italic
-		{ shortcut: "ctrl+1", tag: "# " }, // Heading 1
-		{ shortcut: "ctrl+2", tag: "## " }, // Heading 2
-		{ shortcut: "ctrl+3", tag: "### " }, // Heading 3
-		{ shortcut: "ctrl+4", tag: "#### " }, // Heading 4
-		{ shortcut: "ctrl+5", tag: "##### " }, // Heading 5
-		{ shortcut: "ctrl+6", tag: "###### " }, // Heading 6
-		{ shortcut: "ctrl+shift+o", tag: "1." }, // Ordered list
-		{ shortcut: "ctrl+shift+u", tag: "-" }, // Unordered list
-		{ shortcut: "ctrl+shift+q", tag: "> " }, // Quote
-		{ shortcut: "ctrl+shift+c", tag: "`" }, // Inline code
-		{ shortcut: "ctrl+shift+b", tag: "```" }, // Code block
-		{ shortcut: "ctrl+k", tag: "[Link Text](http://)" }, // Link
-		{ shortcut: "ctrl+shift+i", tag: "![Alt Text](http://)" }, // Image
-	];
-
-	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-	const setupKeyboardShortcuts = (shortcuts: any) => {
-		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-		const handleShortcut = (e: any) => {
-			// biome-ignore lint/complexity/noForEach: <explanation>
-			// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-			shortcuts.forEach((button: any) => {
-				const keys = button.shortcut.split("+");
-				const ctrlKey = keys.includes("ctrl");
-				const shiftKey = keys.includes("shift");
-				const key = keys[keys.length - 1].toLowerCase();
-				if (
-					e.ctrlKey === ctrlKey &&
-					e.shiftKey === shiftKey &&
-					e.key.toLowerCase() === key
-				) {
-					e.preventDefault();
-					insertAtCursor(button.tag);
-				}
-			});
-		};
-
-		// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
-		useEffect(() => {
-			document.addEventListener("keydown", handleShortcut);
-			return () => {
-				document.removeEventListener("keydown", handleShortcut);
-			};
-		}, [shortcuts]);
-	};
-
-	setupKeyboardShortcuts(shortcuts);
 
 	return (
 		<>
@@ -466,16 +248,13 @@ const MarkdownEditor = ({
 					<AlertDialogHeader>
 						<AlertDialogTitle>Delete Post?</AlertDialogTitle>
 						<AlertDialogDescription>
-							Are you sure you want to delete "{postName}"? There is no backup in place!
+							Are you sure you want to delete "{postName}"? There is no backup
+							in place!
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<Button onClick={delete_post}>
-							Yes, delete {postName}.
-						</Button>
-						<Button onClick={() => setIsDeleteOpen(false)}>
-							Nevermind!
-						</Button>
+						<Button onClick={delete_post}>Yes, delete {postName}.</Button>
+						<Button onClick={() => setIsDeleteOpen(false)}>Nevermind!</Button>
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
@@ -504,91 +283,13 @@ const MarkdownEditor = ({
 					)}
 				</div>
 
-				{/* Toolbar */}
-				<div className="w-full flex justify-center space-x-2 mb-4 bg-primary rounded-xl p-2">
-					{toolbarButtons.map((btn) => (
-						<TooltipProvider key={btn.id} delayDuration={200}>
-							<Tooltip>
-								<TooltipTrigger>
-									{btn.id === "heading1" ? (
-										<ContextMenu>
-											<ContextMenuTrigger>
-												<Button
-													variant={"outline"}
-													onClick={() => insertAtCursor(btn.tag)}
-												>
-													{btn.label}
-												</Button>
-											</ContextMenuTrigger>
-											<ContextMenuContent className="dark">
-												{headers.map((heading) => (
-													<ContextMenuItem key={heading.id}>
-														<Button
-															variant={"outline"}
-															onClick={() => insertAtCursor(heading.tag)}
-															className=""
-														>
-															{heading.label}
-														</Button>
-														<p className="">&nbsp;{heading.tooltip}</p>
-													</ContextMenuItem>
-												))}
-											</ContextMenuContent>
-										</ContextMenu>
-									) : (
-										<Button
-											variant={"outline"}
-											onClick={() => insertAtCursor(btn.tag)}
-										>
-											{btn.label}
-										</Button>
-									)}
-								</TooltipTrigger>
-								<TooltipContent>{btn.tooltip}</TooltipContent>
-							</Tooltip>
-						</TooltipProvider>
-					))}
+				{/* Markdown Editor */}
+				<div className="dark" style={{ border: "1px solid black" }}>
+					<Suspense fallback={null}>
+						<EditorComp markdown={markdown} />
+					</Suspense>
 				</div>
 
-				{/* Main Editor and Preview Area */}
-				<div className="grid grid-cols-2 gap-4">
-					{/* Textarea */}
-					<ReactTextareaAutosize
-						minRows={6}
-						value={markdownText}
-						onChange={(e) => setMarkdownText(e.target.value)}
-						className="w-full p-4 bg-transparent text-white border border-gray-600 rounded-md"
-						placeholder="Write your markdown here..."
-						id="textarea"
-					/>
-
-					{/* Preview */}
-					<div className="w-full p-4 border border-gray-600 rounded-md markdown">
-						<ReactMarkdown
-							components={{
-								a: ({ href, children }) => (
-									<Button
-										onClick={(e) => {
-											if (href) {
-												open(href);
-											}
-										}}
-										style={{
-											color: "#1e90ff",
-											textDecoration: "underline",
-											backgroundColor: "transparent",
-											padding: "0",
-										}}
-									>
-										{children}
-									</Button>
-								),
-							}}
-						>
-							{markdownText}
-						</ReactMarkdown>
-					</div>
-				</div>
 				{/* Submit post */}
 				<div className="w-full bg-primary rounded-xl p-2 mt-4">
 					<Form {...form}>
@@ -614,7 +315,11 @@ const MarkdownEditor = ({
 									<span>Create post</span>
 								)}
 							</Button>
-							<Button className="dark ms-4" onClick={confirm_delete} variant="destructive">
+							<Button
+								className="dark ms-4"
+								onClick={confirm_delete}
+								variant="destructive"
+							>
 								Delete Post
 							</Button>
 						</form>

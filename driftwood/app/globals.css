@@ -1,3 +1,4 @@
+@import '../node_modules/@mdxeditor/editor/dist/style.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -369,4 +370,53 @@ body {
 	ol ul {
 		margin-left: 1.5em;
 	}
+}
+
+/* For the markdown editor! */
+.mdxeditor-toolbar {
+  @apply bg-primary border-b border-gray-700 p-2;
+}
+
+.mdxeditor-toolbar button {
+  @apply hover:bg-secondary p-2 rounded;
+}
+
+.mdxeditor-toolbar button[data-active='true'] {
+  @apply bg-secondary;
+}
+
+.mdxeditor {
+  @apply border border-gray-700 rounded-md bg-background;
+}
+
+.mdxeditor-content-editable {
+  @apply focus:outline-none;
+}
+
+.mdxeditor [data-lexical-decorator='true'] {
+  @apply my-4;
+}
+
+.markdown-separator {
+  @apply border-t border-gray-700 my-4;
+}
+
+/* Code block styling */
+.mdxeditor pre {
+  @apply bg-gray-900 rounded-md p-4;
+}
+
+/* Table styling */
+.mdxeditor table {
+  @apply border-collapse w-full;
+}
+
+.mdxeditor th,
+.mdxeditor td {
+  @apply border border-gray-700 p-2;
+}
+
+/* Link styling */
+.mdxeditor a {
+  @apply text-blue-400 hover:text-blue-300;
 }
