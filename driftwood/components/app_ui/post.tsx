@@ -1,5 +1,5 @@
 /// TODO - When at the far left of the screen, the popover sometimes can't be seen for insert link.
-import { useState, useEffect, Suspense, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -50,6 +50,8 @@ import {
 	quotePlugin,
 	thematicBreakPlugin,
 	markdownShortcutPlugin,
+	codeBlockPlugin,
+	codeMirrorPlugin,
 	linkPlugin,
 	imagePlugin,
 	frontmatterPlugin,
@@ -334,7 +336,7 @@ const MarkdownEditor = ({
 				</div>
 
 				{/* Markdown Editor */}
-				<div className={"dark w-full prose prose-invert max-w-none pb-24"}>
+				<div className={"dark w-full prose max-w-none pb-24"}>
 					<MDXEditor
 						ref={mdxEditorRef}
 						markdown={markdownContent || ""}
@@ -347,6 +349,8 @@ const MarkdownEditor = ({
 							quotePlugin(),
 							thematicBreakPlugin(),
 							markdownShortcutPlugin(),
+							codeBlockPlugin({defaultCodeBlockLanguage: 'js'}),
+							codeMirrorPlugin({ codeBlockLanguages: { js: 'JavaScript', css: 'CSS' } }),
 							linkPlugin(),
 							imagePlugin(),
 							frontmatterPlugin(),
