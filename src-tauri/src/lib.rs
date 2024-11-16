@@ -6,17 +6,27 @@ pub mod crypto;
 pub mod driftwood;
 pub mod netlify;
 pub mod response;
+pub mod db;
+pub mod sites;
 
 use crate::commands::{
     check_token, create_post, create_site, delete_post, delete_site, deploy_site, get_post_details,
     get_post_list, get_site_details, list_sites, netlify_login, netlify_logout, refresh_sites,
     update_site,
 };
+
 use dotenv::dotenv;
+
+use crate::db::initialize_database;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     dotenv().ok();
+
+    if let Err(e) = initialize_database() {
+        eprintln!("Database initialization failed: {}", e);
+        std::process::exit(1);
+    }
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())

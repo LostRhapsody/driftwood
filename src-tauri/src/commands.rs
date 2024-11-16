@@ -4,10 +4,11 @@ use crate::response::{
     CreateSiteResponse, // Request,
     Response,
 };
+use crate::sites::SiteRepository;
 use serde::{Deserialize, Serialize};
 use serde_json::{from_str, Value};
 use std::fs::{File, OpenOptions};
-use std::io::{Read, Write};
+use std::io::Read;
 use std::path::Path;
 
 /// TODO clone and refactor load_posts_from_disk to load_post_from_disk, iterate through dir, don't read through the files until a specific file is found
@@ -163,18 +164,23 @@ pub fn refresh_sites(return_site: bool) -> Response {
             let site_details: Vec<SiteDetails> = get_sites(netlify);
             let mut sites_json = Vec::new();
 
-            for site in site_details {
-                sites_json.push(
-                    serde_json::to_value(site)
-                        .expect("Failed to serialize site data in refresh_sites"),
-                );
-            }
+            // update sites in database
+            let site_repo = SiteRepository::new().expect("Failed to init site repository in refresh_sites");
 
-            if let Err(e) = save_json_to_file("sites/sites.json", sites_json.clone()) {
-                eprintln!("Failed to save JSON to file: {}", e);
+            if let Err(e) = site_repo.refresh_sites(site_details.clone()) {
+                eprintln!("Failed to insert site data into database: {}", e);
             }
 
             if return_site {
+
+                // create JSON to send back to client
+                for site in site_details {
+                    sites_json.push(
+                        serde_json::to_value(site)
+                            .expect("Failed to serialize site data in refresh_sites"),
+                    );
+                }
+
                 Response {
                     result: Some(true),
                     status: Some(200),
@@ -199,47 +205,61 @@ pub fn refresh_sites(return_site: bool) -> Response {
 pub fn get_site_details(site_id: String) -> Response {
     println!("Getting details for site {}", site_id);
 
-    match get_single_site_details(site_id) {
-        Ok(mut result) => {
-            println!("Returning site details and favicon path");
-
-            let file_path = "./sites";
-            let file_name = "favicon.ico";
-            let full_path: String = format!(
-                "{}/{}/{}",
-                file_path,
-                result.id.clone().unwrap_or_default(),
-                file_name
-            );
-
-            println!("Loading favicon from file, full_path: {} ", full_path);
-
-            // if the path exists first and if it doesn't, create it.
-            // this will trigger "contents.is_empty" and we'll retrieve it from the API
-            let path = Path::new(file_path);
-
-            let mut favicon = String::new();
-
-            if path.exists() {
-                println!("path exists");
-                let file_name = Path::new(&full_path);
-                if file_name.exists() {
-                    println!("full path exists");
-                    favicon = full_path;
-                }
-            }
-
-            result.favicon_file = Some(favicon);
-
+    match read_site(site_id){
+        Ok(Some(site)) => {
             let mut response = Response::success(String::from("Retrieved site details"));
             response.body = Some(
-                serde_json::to_value(result)
+                serde_json::to_value(site)
                     .expect("Failed to serialize SiteDetails in get_site_details"),
             );
             response
-        }
-        Err(err) => Response::fail(err.to_string()),
+        },
+        Ok(None) => Response::success(String::from("No site by that ID found in database")),
+        Err(e) => Response::fail(format!("Error reading site details from db: {}", e )),
     }
+
+    /// TODO! - Remove all the remaining "read site details from files" stuff
+    // match get_single_site_details(site_id) {
+    //     Ok(mut result) => {
+    //         println!("Returning site details and favicon path");
+
+    //         let file_path = "./sites";
+    //         let file_name = "favicon.ico";
+    //         let full_path: String = format!(
+    //             "{}/{}/{}",
+    //             file_path,
+    //             result.id.clone().unwrap_or_default(),
+    //             file_name
+    //         );
+
+    //         println!("Loading favicon from file, full_path: {} ", full_path);
+
+    //         // if the path exists first and if it doesn't, create it.
+    //         // this will trigger "contents.is_empty" and we'll retrieve it from the API
+    //         let path = Path::new(file_path);
+
+    //         let mut favicon = String::new();
+
+    //         if path.exists() {
+    //             println!("path exists");
+    //             let file_name = Path::new(&full_path);
+    //             if file_name.exists() {
+    //                 println!("full path exists");
+    //                 favicon = full_path;
+    //             }
+    //         }
+
+    //         result.favicon_file = Some(favicon);
+
+    //         let mut response = Response::success(String::from("Retrieved site details"));
+    //         response.body = Some(
+    //             serde_json::to_value(result)
+    //                 .expect("Failed to serialize SiteDetails in get_site_details"),
+    //         );
+    //         response
+    //     }
+    //     Err(err) => Response::fail(err.to_string()),
+    // }
 }
 
 #[tauri::command]
@@ -600,26 +620,6 @@ fn get_sites(netlify: Netlify) -> Vec<SiteDetails> {
     }
 }
 
-/// Saves a JSON vector to disk by appending the entire vector as a single array.
-fn save_json_to_file(file_path: &str, json_data: Vec<Value>) -> Result<(), std::io::Error> {
-    // Serialize the entire vector as a single JSON array
-    let serialized_json = serde_json::to_string(&json_data)
-        .unwrap_or_else(|_| String::from("Failed to serialize sites"));
-
-    // Open the file in append mode and create it if it doesn't exist
-    let mut file = OpenOptions::new()
-        .write(true)
-        .truncate(true) // This ensures the file is emptied before writing
-        .create(true)
-        .open(file_path)?;
-
-    // Write the serialized JSON array to the file
-    file.write_all(serialized_json.as_bytes())?;
-    file.write_all(b"\n")?; // Optional: Add a newline at the end
-
-    Ok(())
-}
-
 /// reads a json value from disk
 fn load_json_from_file() -> Result<Option<Value>, std::io::Error> {
     let file_path = "./sites";
@@ -664,7 +664,16 @@ fn load_json_from_file() -> Result<Option<Value>, std::io::Error> {
     }
 }
 
+fn read_site(site_id: String) -> Result<Option<SiteDetails>, String> {
+    let site_repo = SiteRepository::new()
+        .map_err(|e| format!("Failed to initialize site repository: {}", e))?;
+
+    site_repo.read(&site_id)
+        .map_err(|e| format!("Database error when reading site {}: {}", site_id, e))
+}
+
 fn get_single_site_details(site_id: String) -> Result<SiteDetails, String> {
+
     // Load JSON from file
     match load_json_from_file() {
         Ok(Some(loaded_json)) => {
