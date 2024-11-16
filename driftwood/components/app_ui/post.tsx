@@ -34,7 +34,7 @@ import { type DriftResponse, processResponse } from "@/types/response";
 interface WebsiteDetails {
 	name: string;
 	domain: string;
-	id?: string;
+	id: string;
 	ssl: boolean;
 	url: string;
 	screenshot_url?: string;
@@ -237,9 +237,9 @@ const MarkdownEditor = ({
 			<AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>Post created!</AlertDialogTitle>
+						<AlertDialogTitle>{postName !== "" ? (<>Post Saved!</>) : (<>Post Created!</>)}</AlertDialogTitle>
 						<AlertDialogDescription>
-							Post "{postName}" has been created.
+							Post "{postName}" has been {postName !== "" ? (<>saved</>) : (<>created</>)}.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>

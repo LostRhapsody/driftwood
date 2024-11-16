@@ -288,8 +288,7 @@ impl Post {
         for line in content.lines() {
             if line.starts_with("title:") {
                 title = line.replace("title:", "").trim().to_string();
-            }
-            else if line.starts_with("date:") {
+            } else if line.starts_with("date:") {
                 date = line.replace("date:", "").trim().to_string();
             } else if line.starts_with("tags:") {
                 tags = line

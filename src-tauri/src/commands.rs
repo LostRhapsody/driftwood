@@ -567,7 +567,9 @@ pub fn delete_post(site_id: String, post_name: String) -> Response {
         Ok(site) => {
             let site_path = site.build_site_path().expect("Failed to build site path");
 
-            let post_path = site_path.join("md_posts").join(format!("{}.md", post.filename));
+            let post_path = site_path
+                .join("md_posts")
+                .join(format!("{}.md", post.filename));
 
             match std::fs::remove_file(post_path) {
                 Ok(_) => Response::success(String::from("Post deleted successfully")),

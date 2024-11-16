@@ -8,9 +8,9 @@ pub mod netlify;
 pub mod response;
 
 use crate::commands::{
-    check_token, create_site, get_site_details, list_sites, netlify_login, netlify_logout,
-    refresh_sites, update_site,create_post, deploy_site, get_post_list, delete_site, get_post_details,
-    delete_post,
+    check_token, create_post, create_site, delete_post, delete_site, deploy_site, get_post_details,
+    get_post_list, get_site_details, list_sites, netlify_login, netlify_logout, refresh_sites,
+    update_site,
 };
 use dotenv::dotenv;
 

@@ -50,6 +50,8 @@ base64 = "0.22.1"
 webbrowser = "1.0.1"
 # For URL encoding
 urlencoding = "2.1.3"
+# for sqlite
+rusqlite = { version = "0.32.0", features = ["bundled"] }
 
 [features]
 # This feature is used for production builds or when a dev server is not specified, DO NOT REMOVE!!

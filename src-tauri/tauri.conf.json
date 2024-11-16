@@ -48,9 +48,9 @@
     "windows": [
       {
         "fullscreen": false,
-        "height": 700,
+        "height": 1000,
         "resizable": true,
-        "title": "Driftwood",
+        "title": "Drift",
         "width": 1350
       }
     ],
