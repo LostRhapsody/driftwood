@@ -344,7 +344,9 @@ pub fn get_post_details(post_name: String, site_id: String) -> Response {
 pub fn deploy_site(site_id: String) -> Response {
     match Netlify::new() {
         Ok(netlify) => {
-            let site = get_single_site_details(site_id).expect("Failed to load site details");
+            let site = read_site(site_id)
+                .expect("Failed to read site details from DB (result) in deploy_site")
+                .expect("Failed to read site details from DB (option) in deploy_site");
             // first loop through the site's posts and convert them to HTML
             let site_path = SiteDetails::build_site_path(&site).expect("Failed to build site path");
             // convert site_path PathBuf to string
