@@ -641,7 +641,9 @@ fn get_single_site_details(site_id: String) -> Result<SiteDetails, String> {
 }
 
 fn load_posts_from_disk(site_id: String) -> Result<Vec<Post>, std::io::Error> {
-    let site = get_single_site_details(site_id).expect("failed to get site details");
+    let site = read_site(site_id)
+    .expect("failed to get site details (result) in load_posts_from_disk")
+    .expect("failed to get site details (option) in load_posts_from_disk");
     let site_path = site.build_site_path().expect("failed to get site path");
     let post_path = site_path.join("md_posts");
     let mut post_vector: Vec<Post> = vec![];
