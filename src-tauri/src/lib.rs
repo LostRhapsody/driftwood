@@ -8,6 +8,7 @@ pub mod netlify;
 pub mod response;
 pub mod db;
 pub mod sites;
+pub mod posts;
 
 use crate::commands::{
     check_token, create_post, create_site, delete_post, delete_site, deploy_site, get_post_details,
