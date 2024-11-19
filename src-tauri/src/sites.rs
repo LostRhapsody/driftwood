@@ -59,10 +59,8 @@ impl SiteRepository {
     pub fn update(&self, site: &SiteDetails) -> Result<()> {
         self.conn.execute(
             "UPDATE sites SET
-               name = ?1, domain = ?2, ssl = ?3, url = ?4,
-               screenshot_url = ?5, password = ?6, required = ?7,
-               favicon_file = ?8
-            WHERE id = ?9",
+               name = ?1, domain = ?2, url = ?3, screenshot_url = ?4, favicon_file = ?5
+            WHERE id = ?6",
             params![
                 site.name,
                 site.domain,
@@ -92,12 +90,12 @@ impl SiteRepository {
                 name: row.get(0)?,
                 domain: row.get(1)?,
                 id: row.get(2)?,
-                url: row.get(4)?,
-                screenshot_url: row.get(5)?,
+                url: row.get(3)?,
+                screenshot_url: row.get(4)?,
                 ssl: None,
                 password: None,
                 required: None,
-                favicon_file: row.get(8)?,
+                favicon_file: row.get(5)?,
             })
         })?;
 
@@ -124,7 +122,7 @@ impl SiteRepository {
                   name, domain, id, url, screenshot_url, favicon_file
               ) VALUES (?1, ?2, ?3, ?4, ?5, ?6)
               ON CONFLICT(id) DO UPDATE SET
-                  name = ?1, domain = ?2, url = ?5, screenshot_url = ?6",
+                  name = ?1, domain = ?2, url = ?4, screenshot_url = ?5",
               params![
                   site.name,
                   site.domain,

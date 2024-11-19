@@ -218,96 +218,26 @@ pub fn get_site_details(site_id: String) -> Response {
         Err(e) => Response::fail(format!("Error reading site details from db: {}", e )),
     }
 
-    /// TODO! - Remove all the remaining "read site details from files" stuff
-    // match get_single_site_details(site_id) {
-    //     Ok(mut result) => {
-    //         println!("Returning site details and favicon path");
+    // TODO! - Remove all the remaining "read site details from files" stuff
 
-    //         let file_path = "./sites";
-    //         let file_name = "favicon.ico";
-    //         let full_path: String = format!(
-    //             "{}/{}/{}",
-    //             file_path,
-    //             result.id.clone().unwrap_or_default(),
-    //             file_name
-    //         );
-
-    //         println!("Loading favicon from file, full_path: {} ", full_path);
-
-    //         // if the path exists first and if it doesn't, create it.
-    //         // this will trigger "contents.is_empty" and we'll retrieve it from the API
-    //         let path = Path::new(file_path);
-
-    //         let mut favicon = String::new();
-
-    //         if path.exists() {
-    //             println!("path exists");
-    //             let file_name = Path::new(&full_path);
-    //             if file_name.exists() {
-    //                 println!("full path exists");
-    //                 favicon = full_path;
-    //             }
-    //         }
-
-    //         result.favicon_file = Some(favicon);
-
-    //         let mut response = Response::success(String::from("Retrieved site details"));
-    //         response.body = Some(
-    //             serde_json::to_value(result)
-    //                 .expect("Failed to serialize SiteDetails in get_site_details"),
-    //         );
-    //         response
-    //     }
-    //     Err(err) => Response::fail(err.to_string()),
-    // }
 }
 
 #[tauri::command]
 pub fn list_sites() -> Response {
     println!("Listing sites");
 
-    // Load JSON from file
-    match load_json_from_file() {
-        Ok(Some(loaded_json)) => {
+    let site_repo = SiteRepository::new()
+        .expect("Failed to initialize site repository");
+
+    match site_repo.list_all() {
+        Ok(site_details_vec) => {
             let mut response = Response::success(String::from("Refreshed sites"));
-            response.body = Some(loaded_json);
+            response.body = Some(serde_json::to_value(site_details_vec).expect("Failed to serialize site details vector in list_sites"));
             response
-        }
-        Ok(None) => {
-            println!("File is empty or JSON could not be parsed.");
-            match Netlify::new() {
-                Ok(netlify) => {
-                    println!("Netlify instance created");
-                    let site_details: Vec<SiteDetails> = get_sites(netlify);
-                    let mut sites_json = Vec::new();
-
-                    for site in site_details {
-                        sites_json.push(
-                            serde_json::to_value(site)
-                                .expect("Failed to serialize site data in refresh_sites"),
-                        );
-                    }
-
-                    let mut response = Response::success(String::from("Refreshed sites"));
-                    response.body = Some(
-                        serde_json::to_value(sites_json)
-                            .expect("Failed to serialize site json in refresh_sites"),
-                    );
-                    response
-                }
-                Err(e) => {
-                    println!("Error: {:?}", e);
-                    Response::fail(String::from(
-                        "Could not create a netlify client in refresh_sites",
-                    ))
-                }
-            }
-        }
-        Err(e) => {
-            eprintln!("Failed to load JSON from file: {}", e);
-            Response::fail(format!("Failed to load JSON from file: {}", e))
-        }
+        },
+        Err(e) => Response::fail(format!("Failed to list sites: {}", e)),
     }
+
 }
 
 #[tauri::command]
