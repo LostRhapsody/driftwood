@@ -515,8 +515,8 @@ pub fn delete_post(site_id: String, post_name: String) -> Response {
     let mut post = Post::new(post_name);
     let _ = post.clean_filename();
     println!("Post filename: {}", post.filename);
-    match get_single_site_details(site_id) {
-        Ok(site) => {
+    match read_site(site_id) {
+        Ok(Some(site)) => {
             let site_path = site.build_site_path().expect("Failed to build site path");
 
             let post_path = site_path
@@ -528,6 +528,7 @@ pub fn delete_post(site_id: String, post_name: String) -> Response {
                 Err(e) => Response::fail(format!("Failed to delete post: {}", e)),
             }
         }
+        Ok(None) => Response::fail(String::from("Failed to get site details, nothing was returned from DB")),
         Err(e) => Response::fail(format!("Failed to get site details: {}", e)),
     }
 }
