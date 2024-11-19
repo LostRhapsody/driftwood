@@ -6,9 +6,6 @@ use crate::response::{
 };
 use crate::sites::SiteRepository;
 use serde::{Deserialize, Serialize};
-use serde_json::{from_str, Value};
-use std::fs::{File, OpenOptions};
-use std::io::Read;
 use std::path::Path;
 
 /// TODO clone and refactor load_posts_from_disk to load_post_from_disk, iterate through dir, don't read through the files until a specific file is found
@@ -553,49 +550,6 @@ fn get_sites(netlify: Netlify) -> Vec<SiteDetails> {
     }
 }
 
-/// reads a json value from disk
-fn load_json_from_file() -> Result<Option<Value>, std::io::Error> {
-    let file_path = "./sites";
-    let file_name = "sites.json";
-    let full_path: String = format!("{}/{}", file_path, file_name);
-
-    println!(
-        "Loading JSON from file, file_path: {}/{} ",
-        file_path, file_name
-    );
-
-    // if the path exists first and if it doesn't, create it.
-    // this will trigger "contents.is_empty" and we'll retrieve it from the API
-    let path = Path::new(file_path);
-
-    if !path.exists() {
-        println!("Path does not exist, creating.");
-        std::fs::create_dir(path)?;
-        // return here, as if the path does not exist, neither does a file that stores the sites
-        return Ok(None);
-    }
-
-    let file_name = Path::new(&full_path);
-
-    if !file_name.exists() {
-        println!("Sites file does not exist, creating.");
-        File::create(file_name)?;
-        // again if the file didn't exist, there's nothing to load.
-        return Ok(None);
-    }
-
-    let mut file = OpenOptions::new().read(true).open(file_name)?;
-
-    let mut contents = String::new();
-    file.read_to_string(&mut contents)?;
-
-    if !contents.is_empty() {
-        let json_data: Value = from_str(&contents).unwrap_or(Value::Null);
-        Ok(Some(json_data))
-    } else {
-        Ok(None)
-    }
-}
 
 fn read_site(site_id: String) -> Result<Option<SiteDetails>, String> {
     let site_repo = SiteRepository::new()
@@ -603,41 +557,6 @@ fn read_site(site_id: String) -> Result<Option<SiteDetails>, String> {
 
     site_repo.read(&site_id)
         .map_err(|e| format!("Database error when reading site {}: {}", site_id, e))
-}
-
-fn get_single_site_details(site_id: String) -> Result<SiteDetails, String> {
-
-    // Load JSON from file
-    match load_json_from_file() {
-        Ok(Some(loaded_json)) => {
-            let site_details: Vec<SiteDetails> = serde_json::from_str(&loaded_json.to_string())
-                .expect("Could not serialize json from disk");
-            let mut sites_json: Option<SiteDetails> = None;
-            for site in site_details {
-                if site.id.clone().unwrap_or_else(|| "".to_string()) == site_id {
-                    sites_json = Some(site);
-                    break;
-                }
-            }
-            if let Some(ref data) = sites_json {
-                Ok(data.clone())
-            } else {
-                eprintln!("Could not find this site on disk.");
-                Err(String::from("Could not find this site on disk."))
-            }
-        }
-        Ok(None) => {
-            eprintln!("No sites or JSON on disk to load from!");
-            Err(String::from("No sites or JSON on disk to load from!"))
-        }
-        Err(e) => {
-            eprintln!("Failed to load JSON from file: {}", e);
-            Err(String::from(format!(
-                "Failed to load JSON from file: {}",
-                e
-            )))
-        }
-    }
 }
 
 fn load_posts_from_disk(site_id: String) -> Result<Vec<Post>, std::io::Error> {
