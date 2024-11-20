@@ -47,6 +47,7 @@ pub fn netlify_logout() -> Response {
     }
 }
 
+/// TODO -  Store token in a record
 #[tauri::command]
 pub fn check_token() -> Response {
     println!("Checking token");
@@ -131,7 +132,7 @@ pub fn update_site(site: &str) -> Response {
     println!("Updating a site");
     println!("Updated site args: {}", site);
 
-    let site: SiteDetails = serde_json::from_str(site)
+    let mut site: SiteDetails = serde_json::from_str(site)
         .map_err(|e| e.to_string())
         .expect("Need site details from client, in update_site");
     let netlify = Netlify::new()
@@ -141,10 +142,10 @@ pub fn update_site(site: &str) -> Response {
     match netlify.update_site(site.clone()) {
         Ok(_site_details) => {
             refresh_sites(false);
-            let favicon = site.clone().favicon_file.unwrap_or_default();
-            if favicon != "" {
-                site.move_favicon_to_site_dir(favicon)
-                    .expect("Tried moving new favicon file, failed.");
+            let favicon_path = site.clone().favicon_path.unwrap_or_default();
+            if favicon_path != "" {
+                site.set_favicon(&favicon_path)
+                    .expect("Tried saving new favicon file, failed.");
             }
             Response::success(String::from("Site updated successfully! 🎉"))
         }
@@ -214,27 +215,23 @@ pub fn get_site_details(site_id: String) -> Response {
         Ok(None) => Response::success(String::from("No site by that ID found in database")),
         Err(e) => Response::fail(format!("Error reading site details from db: {}", e )),
     }
-
-    // TODO! - Remove all the remaining "read site details from files" stuff
-
 }
 
 #[tauri::command]
 pub fn list_sites() -> Response {
     println!("Listing sites");
 
-    let site_repo = SiteRepository::new()
-        .expect("Failed to initialize site repository");
-
+    // init site repo and load sites
+    let site_repo = SiteRepository::new().expect("Failed to init site repository in refresh_sites");
     match site_repo.list_all() {
         Ok(site_details_vec) => {
+            let site_json = serde_json::to_value(site_details_vec).expect("Failed to serialized site vector in list_sites");
             let mut response = Response::success(String::from("Refreshed sites"));
-            response.body = Some(serde_json::to_value(site_details_vec).expect("Failed to serialize site details vector in list_sites"));
-            response
+            response.body = Some(site_json);
+            return response;
         },
-        Err(e) => Response::fail(format!("Failed to list sites: {}", e)),
+        Err(e) => return Response::fail(format!("Failed to retrieve and list sites :{}", e)),
     }
-
 }
 
 #[tauri::command]
@@ -262,7 +259,8 @@ pub fn create_post(post_data: String, site_data: String) -> Response {
             screenshot_url: None,
             password: None,
             required: None,
-            favicon_file: None,
+            favicon_path: None,
+            favicon: None,
         }
     });
 

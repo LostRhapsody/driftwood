@@ -61,7 +61,8 @@ pub struct SiteDetails {
     pub screenshot_url: Option<String>,
     pub password: Option<String>,
     pub required: Option<Vec<String>>,
-    pub favicon_file: Option<String>, // only used when updating the site from UI, not sent to Netlify
+    pub favicon: Option<Vec<u8>>, // only used when updating the site from UI, not sent to Netlify
+    pub favicon_path: Option<String>, // only used when updating the site from UI, not sent to Netlify
 }
 
 /// NewSite struct
@@ -270,7 +271,8 @@ impl Post {
             screenshot_url: None,
             password: None,
             required: None,
-            favicon_file: None,
+            favicon_path: None,
+            favicon: None,
         };
 
         let post_path = self.build_post_path(&site_details)?;
@@ -366,16 +368,11 @@ impl SiteDetails {
         Ok(())
     }
 
-    pub fn move_favicon_to_site_dir(&self, favicon_file: String) -> Result<()> {
-        // move the favicon to the site dir
-        let favicon_path = favicon_file;
-        let site_path = self.build_site_path()?;
-        let dest_path = site_path.join("favicon.ico");
-        if let Err(e) = fs::copy(favicon_path, &dest_path) {
-            println!("Failed to copy favicon file: {}", e);
-        } else {
-            println!("Favicon copied to: {}", dest_path.display());
-        }
+    pub fn set_favicon(&mut self, path: &str) -> Result<(), String> {
+        self.favicon = Some(
+            std::fs::read(path)
+                .map_err(|e| format!("Failed to read favicon file: {}", e))?
+        );
         Ok(())
     }
 
