@@ -184,10 +184,10 @@ impl Netlify {
 
         // return the response (create the site dir if good)
         match response {
-            Ok(site) => {
+            Ok(mut site) => {
                 let _ = site.check_site_dir()?;
                 if new_site.favicon_file != "" {
-                    site.move_favicon_to_site_dir(new_site.favicon_file)?;
+                    site.set_favicon(&new_site.favicon_file)?;
                 }
                 return Ok(site);
             }
@@ -542,7 +542,8 @@ impl Netlify {
                                 screenshot_url: None,
                                 password: None,
                                 required: None,
-                                favicon_file: None,
+                                favicon_path: None,
+                                favicon: None,
                             })
                         }
                     }

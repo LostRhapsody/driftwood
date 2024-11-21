@@ -16,7 +16,7 @@ pub fn initialize_database() -> Result<()> {
           screenshot_url TEXT,
           password TEXT,
           required TEXT,
-          favicon_file TEXT
+          favicon TEXT
       )",
       [],
   )?;
@@ -31,6 +31,20 @@ pub fn initialize_database() -> Result<()> {
         content TEXT
     )",
     [],
+  )?;
+
+  rename_field()?;
+
+  Ok(())
+}
+
+// renames a field, retain as support for older dbs, but can remove it later
+pub fn rename_field() -> Result<()> {
+  let conn = Connection::open(DB_PATH)?;
+
+  conn.execute(
+      "ALTER TABLE sites RENAME COLUMN favicon_file TO favicon",
+      [],
   )?;
 
   Ok(())

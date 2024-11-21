@@ -17,7 +17,7 @@ impl SiteRepository {
         self.conn.execute(
             "INSERT INTO sites (
                name, domain, id, ssl, url, screenshot_url,
-               password, required, favicon_file
+               password, required, favicon
            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
             params![
                 site.name,
@@ -25,7 +25,7 @@ impl SiteRepository {
                 site.id,
                 site.url,
                 site.screenshot_url,
-                site.favicon_file,
+                site.favicon,
             ],
         )?;
         Ok(())
@@ -33,7 +33,7 @@ impl SiteRepository {
 
     pub fn read(&self, site_id: &str) -> Result<Option<SiteDetails>> {
         let mut stmt = self.conn.prepare(
-            "SELECT name, domain, id, url, screenshot_url, favicon_file
+            "SELECT name, domain, id, url, screenshot_url, favicon
             FROM sites WHERE id = ?1",
         )?;
 
@@ -45,7 +45,8 @@ impl SiteRepository {
                     id: row.get(2)?,
                     url: row.get(3)?,
                     screenshot_url: row.get(4)?,
-                    favicon_file: row.get(5)?,
+                    favicon: row.get(5)?,
+                    favicon_path: None,
                     ssl: None,
                     password: None,
                     required: None,
@@ -59,14 +60,14 @@ impl SiteRepository {
     pub fn update(&self, site: &SiteDetails) -> Result<()> {
         self.conn.execute(
             "UPDATE sites SET
-               name = ?1, domain = ?2, url = ?3, screenshot_url = ?4, favicon_file = ?5
+               name = ?1, domain = ?2, url = ?3, screenshot_url = ?4, favicon = ?5
             WHERE id = ?6",
             params![
                 site.name,
                 site.domain,
                 site.url,
                 site.screenshot_url,
-                site.favicon_file,
+                site.favicon,
                 site.id,
             ],
         )?;
@@ -81,7 +82,7 @@ impl SiteRepository {
 
     pub fn list_all(&self) -> Result<Vec<SiteDetails>> {
         let mut stmt = self.conn.prepare(
-            "SELECT name, domain, id, url, screenshot_url, favicon_file
+            "SELECT name, domain, id, url, screenshot_url, favicon
             FROM sites",
         )?;
 
@@ -95,7 +96,8 @@ impl SiteRepository {
                 ssl: None,
                 password: None,
                 required: None,
-                favicon_file: row.get(5)?,
+                favicon: row.get(5)?,
+                favicon_path: None,
             })
         })?;
 
@@ -119,7 +121,7 @@ impl SiteRepository {
 
           tx.execute(
               "INSERT INTO sites (
-                  name, domain, id, url, screenshot_url, favicon_file
+                  name, domain, id, url, screenshot_url, favicon
               ) VALUES (?1, ?2, ?3, ?4, ?5, ?6)
               ON CONFLICT(id) DO UPDATE SET
                   name = ?1, domain = ?2, url = ?4, screenshot_url = ?5",
@@ -129,7 +131,7 @@ impl SiteRepository {
                   site_id,
                   site.url,
                   site.screenshot_url,
-                  site.favicon_file,
+                  site.favicon,
               ],
           )?;
       }
@@ -155,7 +157,8 @@ mod tests {
             screenshot_url: None,
             password: None,
             required: Some(vec!["file1.html".to_string()]),
-            favicon_file: None,
+            favicon: None,
+            favicon_path: None,
         }
     }
 
