@@ -23,7 +23,7 @@ impl PostRepository {
 
     pub fn read(&self, post_id: &str) -> Result<Option<Post>> {
         let mut stmt = self.conn.prepare(
-            "SELECT title, header_image, date, content FROM posts WHERE id = ?1"
+            "SELECT title, header_image, date, content, post_id, site_id FROM posts WHERE id = ?1"
         )?;
 
         stmt.query_row(params![post_id], |row| {
@@ -34,6 +34,8 @@ impl PostRepository {
                 content: row.get(3)?,
                 tags: vec![], // Load from tags table in future
                 filename: String::new(), // Generate from title when needed
+                post_id: row.get(4)?, // post Id and site Id don't matter here, won't be getting this
+                site_id: row.get(5)?,  // shit from disk anymore
             })
         }).optional()
     }
@@ -54,7 +56,7 @@ impl PostRepository {
 
     pub fn list_all(&self, site_id: &str) -> Result<Vec<Post>> {
         let mut stmt = self.conn.prepare(
-            "SELECT title, header_image, date, content FROM posts WHERE site_id = ?1"
+            "SELECT title, header_image, date, content, post_id, site_id FROM posts WHERE site_id = ?1"
         )?;
 
         let posts_iter = stmt.query_map(params![site_id], |row| {
@@ -65,6 +67,8 @@ impl PostRepository {
                 content: row.get(3)?,
                 tags: vec![], // Load from tags table in future
                 filename: String::new(), // Generate from title when needed
+                post_id: row.get(4)?, // post Id and site Id don't matter here, won't be getting this
+                site_id: row.get(5)?,  // shit from disk anymore
             })
         })?;
 

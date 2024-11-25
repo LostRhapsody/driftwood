@@ -23,12 +23,14 @@ pub fn initialize_database() -> Result<()> {
 
   conn.execute(
     "CREATE TABLE IF NOT EXISTS posts (
-        id TEXT PRIMARY KEY,
-        title TEXT NOT NULL,
         site_id TEXT NOT NULL,
+        post_id INTEGER NOT NULL,
+        title TEXT NOT NULL,
         header_image BLOB,
         date TEXT,
-        content TEXT
+        content TEXT,
+        FOREIGN KEY(site_id) REFERENCES sites(id),
+        PRIMARY KEY (site_id, post_id)
     )",
     [],
   )?;

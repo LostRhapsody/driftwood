@@ -20,8 +20,8 @@ pub struct Post {
     pub image: Option<String>,
     pub tags: Vec<String>,
     // TODO - add post_id and site_id to post, make it easier to query
-    // pub post_id: String
-    // pub site_id: String,
+    pub post_id: u64,
+    pub site_id: String,
 }
 
 #[derive(Serialize)]
@@ -84,6 +84,8 @@ static INDEX_TEMPLATE: &'static str = include_str!("templates/default/index-temp
 
 impl Post {
     /// Creates a new Post instance with the given title.
+    /// Note: Does not insert Post into database, this just creates an empty
+    /// Post struct to work with
     ///
     /// # Arguments
     ///
@@ -94,19 +96,18 @@ impl Post {
     /// A new Post instance with the current date and empty content, filename, and tags.
     pub fn new(title: String) -> Post {
         println!("Creating new post: {}", title);
+
         let date = chrono::Local::now();
         let date = date.format("%Y/%m/%d %I:%M %p").to_string();
-        let filename = String::new();
-        let content = String::new();
-        let image = None;
-        let tags = Vec::new();
         Post {
             title,
             date,
-            content,
-            filename,
-            tags,
-            image,
+            content: String::new(),
+            filename: String::new(),
+            tags: Vec::new(),
+            image: None,
+            post_id: 0,
+            site_id: String::new(),
         }
     }
 
@@ -321,6 +322,8 @@ impl Post {
             filename: self.filename.clone(),
             image,
             tags,
+            post_id: 0, // post Id and site Id don't matter here, won't be getting this
+            site_id: String::new(),  // shit from disk anymore
         };
 
         println!("Post data: {:?}", post);

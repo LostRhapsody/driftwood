@@ -320,6 +320,8 @@ pub fn get_post_details(post_name: String, site_id: String) -> Response {
         filename: String::from(""),
         image: None,
         tags: vec![],
+        post_id: 0,
+        site_id: String::new(),
     };
     let post = post.read_post_from_disk(site_id);
     match post {
@@ -617,6 +619,8 @@ fn load_posts_from_disk(site_id: String) -> Result<Vec<Post>, std::io::Error> {
             filename,
             content,
             tags,
+            post_id: 0, // post Id and site Id don't matter here, won't be getting this
+            site_id: String::new(),  // shit from disk anymore
         };
 
         println!("Post data: {:?}", post);
