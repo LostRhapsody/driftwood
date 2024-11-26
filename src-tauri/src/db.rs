@@ -35,7 +35,7 @@ pub fn initialize_database() -> Result<()> {
     [],
   )?;
 
-  rename_field()?;
+  // rename_field()?;
 
   Ok(())
 }

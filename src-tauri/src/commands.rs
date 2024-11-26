@@ -6,6 +6,7 @@ use crate::response::{
 };
 use crate::sites::SiteRepository;
 use serde::{Deserialize, Serialize};
+use crate::posts::PostRepository;
 use std::path::Path;
 
 /// TODO clone and refactor load_posts_from_disk to load_post_from_disk, iterate through dir, don't read through the files until a specific file is found
@@ -236,64 +237,39 @@ pub fn list_sites() -> Response {
 
 #[tauri::command]
 pub fn create_post(post_data: String, site_data: String) -> Response {
-    println!("Create post, data: {}", post_data);
+    println!("Create post, post data: {}", post_data);
+    println!("Create post, site data: {}", site_data);
+
+    // init repo to save post in DB
+    let post_repo = PostRepository::new().expect("Failed to init post repository in create_post");
 
     // serialize the post_data into a JSON object for interactivity.
-    let post_data: PostData = serde_json::from_str(&post_data).unwrap_or_else(|e| {
-        println!("Error deserializing: {}", e);
-        PostData {
-            post_name: "".to_string(),
-            post_text: "".to_string(),
-        }
-    });
+    let post_data: PostData = serde_json::from_str(&post_data).expect("Failed to serialize the post data in create_post");
 
     // serialize the site_data into a JSON object for interactivity.
-    let site_data: SiteDetails = serde_json::from_str(&site_data).unwrap_or_else(|e| {
-        println!("Error deserializing: {}", e);
-        SiteDetails {
-            name: None,
-            domain: None,
-            id: None,
-            ssl: None,
-            url: None,
-            screenshot_url: None,
-            password: None,
-            required: None,
-            favicon_path: None,
-            favicon: None,
-        }
-    });
-
-    println!("Serialized post data: {:?}", post_data);
-    println!("Serialized site data: {:?}", site_data);
+    let site_data: SiteDetails = serde_json::from_str(&site_data).expect("Failed to serialize site data in create_post");
 
     // create a new post
     // date is set automatically
     let mut new_post = Post::new(post_data.post_name);
+    // manually set the content
+    new_post.content = post_data.post_text;
 
     // strip bad chars and set post.filename
     let _ = new_post.clean_filename();
     // (replace "-"" with spaces basically) and set post.title
     let _ = new_post.build_post_name();
-    // check if the site dir exists, if ont create it (sites/sitedr)
-    let _ = site_data.check_site_dir();
-    // check if the site post dir exists, if not create it (sitedir/md_posts)
-    let _ = Post::check_post_dir(&site_data);
 
-    // remove special chars and set post.tags
-    // TODO - add tags
-    let _ = new_post.clean_and_set_tags(String::new());
-
-    // write the post to disk
-    match new_post.write_post_to_disk(&site_data, post_data.post_text) {
-        Ok(_) => {
-            println!("Post written to disk.");
+    // create post in DB
+    match post_repo.create(&new_post, &site_data.id.expect("Failed to retrieve site id in create_post")) {
+        Ok(()) => {
+            println!("Post created in DB");
             Response::success(String::from("success"))
-        }
-        Err(e) => {
-            println!("Error: {}", e);
-            Response::fail(format!("Failed to write post to disk: {}", e))
-        }
+        },
+        Err(err) => {
+            println!("Failed to create post in DB: {}", err);
+            Response::fail(format!("failed to create post: {}", err))
+        },
     }
 }
 
