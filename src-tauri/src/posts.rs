@@ -21,12 +21,12 @@ impl PostRepository {
         Ok(())
     }
 
-    pub fn read(&self, post_id: &str) -> Result<Option<Post>> {
+    pub fn read(&self, site_id: &str, post_id: u64) -> Result<Option<Post>> {
         let mut stmt = self.conn.prepare(
-            "SELECT title, header_image, date, content, post_id, site_id FROM posts WHERE id = ?1"
+            "SELECT title, header_image, date, content, post_id, site_id FROM posts WHERE site_id = ?1 AND post_id = ?2"
         )?;
 
-        stmt.query_row(params![post_id], |row| {
+        stmt.query_row(params![site_id,post_id], |row| {
             Ok(Post {
                 title: row.get(0)?,
                 image: row.get(1)?,
@@ -34,8 +34,8 @@ impl PostRepository {
                 content: row.get(3)?,
                 tags: vec![], // Load from tags table in future
                 filename: String::new(), // Generate from title when needed
-                post_id: row.get(4)?, // post Id and site Id don't matter here, won't be getting this
-                site_id: row.get(5)?,  // shit from disk anymore
+                post_id: row.get(4)?,
+                site_id: row.get(5)?,
             })
         }).optional()
     }
@@ -49,8 +49,8 @@ impl PostRepository {
         Ok(())
     }
 
-    pub fn delete(&self, post_id: &str) -> Result<()> {
-        self.conn.execute("DELETE FROM posts WHERE id = ?1", params![post_id])?;
+    pub fn delete(&self, site_id: &str, post_id: u64) -> Result<()> {
+        self.conn.execute("DELETE FROM posts WHERE site_id = ?1 and post_id = ?2", params![site_id,post_id])?;
         Ok(())
     }
 

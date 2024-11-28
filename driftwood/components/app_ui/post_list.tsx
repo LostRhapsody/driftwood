@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import PostCard from "@/components/app_ui/post_card";
 import {
@@ -9,15 +8,14 @@ import {
 	processResponse
 } from "@/types/response";
 
-import type {Post} from "@/types/post";
+import type { Post } from "@/types/post";
 
 export default function Posts({
 	site,
 	onEditClick,
 	onReturnClick,
-}: { site: string; onEditClick: (post_name: string) => void; onReturnClick: (site_id: string) => void; }) {
+}: { site: string; onEditClick: (post_id: string) => void; onReturnClick: (site_id: string) => void; }) {
 	const [data, setData] = useState<Post[] | null>(null);
-	const { toast } = useToast();
 
 	useEffect(() => {
 		const listPosts = async () => {
@@ -26,6 +24,7 @@ export default function Posts({
 			});
 
 			const result = processResponse(response);
+			console.log(response);
 
 			if(result)
 				setData(response.body);

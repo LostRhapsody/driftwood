@@ -79,12 +79,12 @@ const formSchema = z.object({
 
 const MarkdownEditor = ({
 	site,
-	post_name,
+	post_id,
 	onReturnClick,
 }: {
 	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 	site: any;
-	post_name: string;
+	post_id: string;
 	onReturnClick: (site_details: string, show_post_list: boolean) => void;
 }) => {
 
@@ -162,18 +162,18 @@ const MarkdownEditor = ({
 	}
 
 	async function get_post_details() {
-		setPostName(post_name);
 		form.setValue("post_name", postName);
 
 		const response = await invoke<DriftResponse<Post>>("get_post_details", {
 			siteId: site,
-			postName: post_name,
+			postId: post_id,
 		});
 
 		const result = processResponse(response);
 
 		if (result) {
 			setMarkdownContent(response.body.content);
+			setPostName(response.body.title);
 			mdxEditorRef.current?.setMarkdown(response.body.content);
 		}
 		else alert(response.message);
@@ -195,7 +195,7 @@ const MarkdownEditor = ({
 
 		if (result) {
 			// navigate back to post list or edit site
-			if (post_name !== "") {
+			if (post_id !== "") {
 				onReturnClick(site_details.id, true);
 			} else {
 				onReturnClick(site_details.id, false);
@@ -213,7 +213,7 @@ const MarkdownEditor = ({
 			if (!mounted) return;
 
 			await get_site_details();
-			if (post_name !== "") await get_post_details();
+			if (post_id !== "") await get_post_details();
 		};
 
 		fetchData();
@@ -221,7 +221,7 @@ const MarkdownEditor = ({
 		return () => {
 			mounted = false;
 		};
-	}, [post_name]);
+	}, [post_id]);
 
 	// Update form defaults when post_name changes
 	useEffect(() => {

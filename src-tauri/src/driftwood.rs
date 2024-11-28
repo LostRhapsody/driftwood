@@ -19,7 +19,6 @@ pub struct Post {
     pub filename: String,
     pub image: Option<String>,
     pub tags: Vec<String>,
-    // TODO - add post_id and site_id to post, make it easier to query
     pub post_id: u64,
     pub site_id: String,
 }

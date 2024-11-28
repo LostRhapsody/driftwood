@@ -1,13 +1,5 @@
 import { Button } from "@/components/ui/button"
-
-type Post = {
-	title: string;
-	tags: string[];
-	date: string;
-	image: string;
-	filename: string;
-	excerpt: string;
-};
+import type { Post } from "@/types/post";
 
 type PostsListProps = {
 	posts: Post[];
@@ -55,7 +47,7 @@ const Card: React.FC<PostsListProps> = ({ posts, onEditClick }) => {
 									);
 								})}
                 </p>
-                <Button className="card__button" onClick={() => onEditClick(post.title)}>Edit post</Button>
+                <Button className="card__button" onClick={() => onEditClick(post.post_id)}>Edit post</Button>
 							</div>
 						</div>
 					</div>

@@ -56,10 +56,10 @@ export default function Home() {
 		setCurrentPost("");
 	};
 
-	const handlePostEditClick = (post_name:string) => {
-		console.log("Editing post: ", post_name);
+	const handlePostEditClick = (post_id:string) => {
+		console.log("Editing post: ", post_id);
 		setCurrentPage("post");
-		setCurrentPost(post_name);
+		setCurrentPost(post_id);
 	}
 
 	const renderContent = () => {
@@ -100,7 +100,7 @@ export default function Home() {
 				return (
 					<CreatePost
 						site={currentSite}
-						post_name={currentPost}
+						post_id={currentPost}
 						onReturnClick={handlePostReturnClick}
 					/>
 				);

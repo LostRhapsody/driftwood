@@ -1,4 +1,6 @@
 export type Post = {
+	post_id: string;
+	site_id: string;
 	title: string;
 	tags: string[];
 	date: string;

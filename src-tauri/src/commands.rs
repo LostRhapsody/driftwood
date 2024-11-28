@@ -235,6 +235,8 @@ pub fn list_sites() -> Response {
     }
 }
 
+/// TODO - we call this to update/create posts, but it does not yet actually update
+/// in the DB, just creates new posts over and over again.
 #[tauri::command]
 pub fn create_post(post_data: String, site_data: String) -> Response {
     println!("Create post, post data: {}", post_data);
@@ -284,22 +286,17 @@ pub fn create_post(post_data: String, site_data: String) -> Response {
 ///
 /// A Drift Reponse struct, the body contains the post data structure
 #[tauri::command]
-pub fn get_post_details(post_name: String, site_id: String) -> Response {
+pub fn get_post_details(post_id: u64, site_id: String) -> Response {
     println!(
         "Running get post details for site: {}, post name: {}",
-        site_id, post_name
+        site_id, post_id
     );
-    let mut post = Post {
-        title: post_name,
-        date: String::from(""),
-        content: String::from(""),
-        filename: String::from(""),
-        image: None,
-        tags: vec![],
-        post_id: 0,
-        site_id: String::new(),
-    };
-    let post = post.read_post_from_disk(site_id);
+
+    // init repo to save post in DB
+    let post_repo = PostRepository::new().expect("Failed to init post repository in create_post");
+    let post = post_repo.read(&site_id, post_id);
+
+    // let post = post.read_post_from_disk(site_id);
     match post {
         Ok(post) => {
             let mut response = Response::success(String::from("Read post from disk"));
@@ -468,7 +465,10 @@ pub fn deploy_site(site_id: String) -> Response {
 
 #[tauri::command]
 pub fn get_post_list(site_id: String) -> Response {
-    let posts = load_posts_from_disk(site_id);
+
+    let post_repo = PostRepository::new().expect("Failed to init post repository in create_post");
+    let posts = post_repo.list_all(&site_id);
+
     match posts {
         Ok(posts) => {
             let mut response = Response::success(String::from("Retrieved sites"));
