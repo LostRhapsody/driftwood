@@ -13,7 +13,7 @@ pub mod posts;
 use crate::commands::{
     check_token, create_post, create_site, delete_post, delete_site, deploy_site, get_post_details,
     get_post_list, get_site_details, list_sites, netlify_login, netlify_logout, refresh_sites,
-    update_site,
+    update_site, update_post,
 };
 
 use dotenv::dotenv;
@@ -46,6 +46,7 @@ pub fn run() {
             delete_site,
             get_post_details,
             delete_post,
+            update_post,
         ])
         .plugin(tauri_plugin_dialog::init())
         .run(tauri::generate_context!())

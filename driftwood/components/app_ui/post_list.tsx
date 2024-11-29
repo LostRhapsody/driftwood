@@ -11,16 +11,16 @@ import {
 import type { Post } from "@/types/post";
 
 export default function Posts({
-	site,
+	site_id,
 	onEditClick,
 	onReturnClick,
-}: { site: string; onEditClick: (post_id: string) => void; onReturnClick: (site_id: string) => void; }) {
+}: { site_id: string; onEditClick: (post_id: number) => void; onReturnClick: (site_id: string) => void; }) {
 	const [data, setData] = useState<Post[] | null>(null);
 
 	useEffect(() => {
 		const listPosts = async () => {
 			const response = await invoke<DriftResponse<Post[]>>("get_post_list", {
-				siteId: site,
+				siteId: site_id,
 			});
 
 			const result = processResponse(response);
@@ -32,7 +32,7 @@ export default function Posts({
 				alert(response.message);
 		};
 		listPosts();
-	}, [site]);
+	}, [site_id]);
 
 	return (
 		<div className="w-full">
@@ -41,7 +41,7 @@ export default function Posts({
 			</div>
 			{data && <PostCard posts={data} onEditClick={onEditClick} />}
 			<div className="flex gap-8">
-				<Button onClick={() => onReturnClick(site)}>
+				<Button onClick={() => onReturnClick(site_id)}>
 						Return to site
 				</Button>
 			</div>

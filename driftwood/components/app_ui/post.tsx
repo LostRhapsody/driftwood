@@ -30,6 +30,8 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { type DriftResponse, processResponse } from "@/types/response";
+import type { Post } from "@/types/post";
+import type { PostData } from "@/types/post_data";
 
 interface WebsiteDetails {
 	name: string;
@@ -40,8 +42,6 @@ interface WebsiteDetails {
 	screenshot_url?: string;
 	password: string;
 }
-
-import type { Post } from "@/types/post";
 
 import {
 	MDXEditor,
@@ -78,13 +78,12 @@ const formSchema = z.object({
 });
 
 const MarkdownEditor = ({
-	site,
+	site_id,
 	post_id,
 	onReturnClick,
 }: {
-	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-	site: any;
-	post_id: string;
+	site_id: string;
+	post_id: number;
 	onReturnClick: (site_details: string, show_post_list: boolean) => void;
 }) => {
 
@@ -92,6 +91,7 @@ const MarkdownEditor = ({
 	const { toast } = useToast();
 	const [isAlertOpen, setIsAlertOpen] = useState(false);
 	const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+	const editMode = post_id !== 0;
 	const [postName, setPostName] = useState("");
 	const [markdownContent, setMarkdownContent] = useState("");
 	const mdxEditorRef = useRef<MDXEditorMethods>(null);
@@ -110,12 +110,55 @@ const MarkdownEditor = ({
 		resolver: zodResolver(formSchema),
 	});
 
+	const update_post = async (values: z.infer<typeof formSchema>) => {
+
+		const markdownText = mdxEditorRef.current?.getMarkdown();
+		if(!markdownText) {
+			alert("Failed to retrieve text from editor :(");
+			return;
+		}
+
+		setMarkdownContent(markdownText);
+
+		const post_data: PostData = {
+			post_id: post_id,
+			post_name: values.post_name,
+			post_text: markdownText,
+		};
+
+		setPostName(post_data.post_name);
+
+		const site_data = {
+			name: site_details.name,
+			domain: site_details.domain,
+			id: site_details.id,
+			ssl: site_details.ssl,
+			url: site_details.url,
+			screenshot_url: site_details.screenshot_url,
+			password: site_details.password,
+		};
+		const response = await invoke<DriftResponse>("update_post", {
+			postData: JSON.stringify(post_data),
+			siteData: JSON.stringify(site_data),
+		});
+
+		const result = processResponse(response);
+
+		if (result) setIsAlertOpen(true);
+		else alert(response.message);
+	};
+
 	const create_post = async (values: z.infer<typeof formSchema>) => {
 
 		const markdownText = mdxEditorRef.current?.getMarkdown();
-		if(markdownText) setMarkdownContent(markdownText);
+		if(!markdownText) {
+			alert("Failed to retrieve text from editor :(");
+			return;
+		}
+		setMarkdownContent(markdownText);
 
-		const post_data = {
+		const post_data: PostData = {
+			post_id: post_id,
 			post_name: values.post_name,
 			post_text: markdownText,
 		};
@@ -144,14 +187,18 @@ const MarkdownEditor = ({
 
 	// submit handler for site create form
 	function onSubmit(values: z.infer<typeof formSchema>) {
-		create_post(values);
+		if (editMode){
+			update_post(values);
+		} else {
+			create_post(values);
+		}
 	}
 
 	async function get_site_details() {
 		const response = await invoke<DriftResponse<WebsiteDetails>>(
 			"get_site_details",
 			{
-				siteId: site,
+				siteId: site_id,
 			},
 		);
 
@@ -165,7 +212,7 @@ const MarkdownEditor = ({
 		form.setValue("post_name", postName);
 
 		const response = await invoke<DriftResponse<Post>>("get_post_details", {
-			siteId: site,
+			siteId: site_id,
 			postId: post_id,
 		});
 
@@ -187,15 +234,15 @@ const MarkdownEditor = ({
 
 	async function delete_post() {
 		const response = await invoke<DriftResponse>("delete_post", {
-			siteId: site,
+			siteId: site_id,
 			postName: postName,
 		});
 
 		const result = processResponse(response);
 
 		if (result) {
-			// navigate back to post list or edit site
-			if (post_id !== "") {
+			// if edit mode, navigate back to post list (true), else back to edit site
+			if (editMode) {
 				onReturnClick(site_details.id, true);
 			} else {
 				onReturnClick(site_details.id, false);
@@ -213,7 +260,7 @@ const MarkdownEditor = ({
 			if (!mounted) return;
 
 			await get_site_details();
-			if (post_id !== "") await get_post_details();
+			if (editMode) await get_post_details();
 		};
 
 		fetchData();
@@ -237,16 +284,16 @@ const MarkdownEditor = ({
 			<AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>{postName !== "" ? (<>Post Saved!</>) : (<>Post Created!</>)}</AlertDialogTitle>
+						<AlertDialogTitle>{editMode ? (<>Post Saved!</>) : (<>Post Created!</>)}</AlertDialogTitle>
 						<AlertDialogDescription>
-							Post "{postName}" has been {postName !== "" ? (<>saved</>) : (<>created</>)}.
+							Post "{postName}" has been {editMode ? (<>saved</>) : (<>created</>)}.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
 						<a href="/">
 							<AlertDialogAction>Home</AlertDialogAction>
 						</a>
-						{postName !== "" ? (
+						{editMode ? (
 							<AlertDialogAction
 								onClick={() => onReturnClick(site_details.id, true)}
 							>
@@ -281,7 +328,7 @@ const MarkdownEditor = ({
 				{/* Post details form */}
 				<div className="w-full bg-primary rounded-xl p-2 mb-4">
 					<p className="text-xl">Site: {site_details.name}</p>
-					{postName !== "" ? (
+					{editMode ? (
 						<Button
 							className="mt-4"
 							variant={"outline"}
@@ -318,7 +365,7 @@ const MarkdownEditor = ({
 								)}
 							/>
 							<Button className="dark" type="submit">
-								{postName !== "" ? (
+								{editMode ? (
 									<span>Save post</span>
 								) : (
 									<span>Create post</span>

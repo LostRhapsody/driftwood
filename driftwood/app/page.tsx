@@ -20,6 +20,7 @@ export default function Home() {
 	const [currentPage, setCurrentPage] = useState("home");
 	const [currentSite, setCurrentSite] = useState("");
 	const [currentPost, setCurrentPost] = useState("");
+	const [currentPostId, setCurrentPostId] = useState(0);
 
 	const handleEditSite = (site_id: string) => {
 		console.log("Edit Site id: ", site_id);
@@ -33,6 +34,7 @@ export default function Home() {
 		setCurrentPage("sites");
 		setCurrentSite("");
 		setCurrentPost("");
+		setCurrentPostId(0);
 	};
 
 	const handlePostReturnClick = (site_id: string, show_post_list: boolean) => {
@@ -40,6 +42,7 @@ export default function Home() {
 		show_post_list ? setCurrentPage("list_posts") : setCurrentPage("edit");
 		setCurrentSite(site_id);
 		setCurrentPost("");
+		setCurrentPostId(0);
 	};
 
 	const handleViewPostsClick = (site_id: string) => {
@@ -47,6 +50,7 @@ export default function Home() {
 		setCurrentPage("list_posts");
 		setCurrentSite(site_id);
 		setCurrentPost("");
+		setCurrentPostId(0);
 	};
 
 	const handleAddPostClick = (site_id: string) => {
@@ -54,12 +58,13 @@ export default function Home() {
 		setCurrentPage("post");
 		setCurrentSite(site_id);
 		setCurrentPost("");
+		setCurrentPostId(0);
 	};
 
-	const handlePostEditClick = (post_id:string) => {
+	const handlePostEditClick = (post_id:number) => {
 		console.log("Editing post: ", post_id);
 		setCurrentPage("post");
-		setCurrentPost(post_id);
+		setCurrentPostId(post_id);
 	}
 
 	const renderContent = () => {
@@ -99,13 +104,13 @@ export default function Home() {
 			case "post":
 				return (
 					<CreatePost
-						site={currentSite}
-						post_id={currentPost}
+						site_id={currentSite}
+						post_id={currentPostId}
 						onReturnClick={handlePostReturnClick}
 					/>
 				);
 			case "list_posts":
-				return <Posts site={currentSite} onEditClick={handlePostEditClick} onReturnClick={handleEditSite} />;
+				return <Posts site_id={currentSite} onEditClick={handlePostEditClick} onReturnClick={handleEditSite} />;
 			default:
 				return <div>Home sweet home default</div>;
 		}

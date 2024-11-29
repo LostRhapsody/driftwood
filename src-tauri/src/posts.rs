@@ -40,11 +40,12 @@ impl PostRepository {
         }).optional()
     }
 
-    pub fn update(&self, post: &Post, post_id: &str) -> Result<()> {
+    pub fn update(&self, post: &Post, site_id: &str) -> Result<()> {
+        println!("Updating post: {} for site {}", post.post_id, site_id);
         self.conn.execute(
             "UPDATE posts SET title = ?1, header_image = ?2, content = ?3
-             WHERE id = ?4",
-            params![post.title, post.image, post.content, post_id],
+             WHERE site_id = ?4 and post_id = ?5",
+            params![post.title, post.image, post.content, site_id, post.post_id],
         )?;
         Ok(())
     }

@@ -17,6 +17,7 @@ use std::path::Path;
 // is strictly for serializing the json from the client.
 #[derive(Serialize, Deserialize, Debug)]
 struct PostData {
+    post_id: u64,
     post_name: String,
     post_text: String,
 }
@@ -235,8 +236,46 @@ pub fn list_sites() -> Response {
     }
 }
 
-/// TODO - we call this to update/create posts, but it does not yet actually update
-/// in the DB, just creates new posts over and over again.
+/// Nearly identical to create_post but updates an existing record instead of inserting a new one
+#[tauri::command]
+pub fn update_post(post_data: String, site_data: String) -> Response {
+    println!("Update post, post data: {}", post_data);
+    println!("Update post, site data: {}", site_data);
+
+    // init repo to save post in DB
+    let post_repo = PostRepository::new().expect("Failed to init post repository in create_post");
+
+    // serialize the post_data into a JSON object for interactivity.
+    let post_data: PostData = serde_json::from_str(&post_data).expect("Failed to serialize the post data in create_post");
+
+    // serialize the site_data into a JSON object for interactivity.
+    let site_data: SiteDetails = serde_json::from_str(&site_data).expect("Failed to serialize site data in create_post");
+
+    // create a new post
+    // date is set automatically
+    let mut updated_post = Post::new(post_data.post_name);
+    // manually set the content
+    updated_post.content = post_data.post_text;
+    updated_post.post_id = post_data.post_id;
+
+    // strip bad chars and set post.filename
+    let _ = updated_post.clean_filename();
+    // (replace "-"" with spaces basically) and set post.title
+    let _ = updated_post.build_post_name();
+
+    // create post in DB
+    match post_repo.update(&updated_post, &site_data.id.expect("Failed to retrieve site id in create_post")) {
+        Ok(()) => {
+            println!("Post updated in DB");
+            Response::success(String::from("success"))
+        },
+        Err(err) => {
+            println!("Failed to update post in DB: {}", err);
+            Response::fail(format!("failed to update post: {}", err))
+        },
+    }
+}
+
 #[tauri::command]
 pub fn create_post(post_data: String, site_data: String) -> Response {
     println!("Create post, post data: {}", post_data);
@@ -526,83 +565,10 @@ fn get_sites(netlify: Netlify) -> Vec<SiteDetails> {
     }
 }
 
-
 fn read_site(site_id: String) -> Result<Option<SiteDetails>, String> {
     let site_repo = SiteRepository::new()
         .map_err(|e| format!("Failed to initialize site repository: {}", e))?;
 
     site_repo.read(&site_id)
         .map_err(|e| format!("Database error when reading site {}: {}", site_id, e))
-}
-
-fn load_posts_from_disk(site_id: String) -> Result<Vec<Post>, std::io::Error> {
-    let site = read_site(site_id)
-    .expect("failed to get site details (result) in load_posts_from_disk")
-    .expect("failed to get site details (option) in load_posts_from_disk");
-    let site_path = site.build_site_path().expect("failed to get site path");
-    let post_path = site_path.join("md_posts");
-    let mut post_vector: Vec<Post> = vec![];
-    if !post_path.exists() {
-        println!("checking 1.5");
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "The site does not contain any posts",
-        ));
-    }
-
-    for md_post in std::fs::read_dir(post_path)? {
-        let md_post = md_post?;
-        let path = md_post.path();
-        let filename = path
-            .file_name()
-            .expect("Tried to get file name of post")
-            .to_string_lossy()
-            .into_owned();
-        let file = std::fs::read_to_string(path)?;
-
-        let mut title = String::new();
-        let mut date = String::new();
-        let mut image = None;
-        let mut tags: Vec<String> = vec![];
-        let mut content = String::new();
-        let mut line_counter = 0;
-
-        for line in file.lines() {
-            line_counter += 1;
-            match line_counter {
-                2 => date = line.trim().replace("date:", ""),
-                3 => continue,
-                4 => image = Some(line.trim().replace("image:", "")),
-                5 => {
-                    tags = line
-                        .replace("tags:", "")
-                        .trim()
-                        .split(',')
-                        .map(|s| s.trim().to_string())
-                        .collect()
-                }
-                1 => title = line.trim().replace("title:", ""),
-                // TODO - We don't actually need content for this one, so break here
-                // but, for the single post load function, we'll need to do this.
-                _ => content += line.trim(),
-            }
-        }
-
-        let post = Post {
-            title,
-            date,
-            image,
-            filename,
-            content,
-            tags,
-            post_id: 0, // post Id and site Id don't matter here, won't be getting this
-            site_id: String::new(),  // shit from disk anymore
-        };
-
-        println!("Post data: {:?}", post);
-
-        post_vector.push(post);
-    }
-
-    Ok(post_vector)
 }
