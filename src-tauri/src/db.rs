@@ -7,30 +7,44 @@ pub fn initialize_database() -> Result<()> {
   let conn = Connection::open(DB_PATH)?;
 
   conn.execute(
-      "CREATE TABLE IF NOT EXISTS sites (
-          id TEXT PRIMARY KEY,
-          name TEXT NOT NULL,
-          domain TEXT,
-          ssl BOOLEAN DEFAULT FALSE,
-          url TEXT,
-          screenshot_url TEXT,
-          password TEXT,
-          required TEXT,
-          favicon TEXT
-      )",
-      [],
+    "CREATE TABLE IF NOT EXISTS sites (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      domain TEXT,
+      ssl BOOLEAN DEFAULT FALSE,
+      url TEXT,
+      screenshot_url TEXT,
+      password TEXT,
+      required TEXT,
+      favicon TEXT
+    )",
+    [],
   )?;
 
   conn.execute(
     "CREATE TABLE IF NOT EXISTS posts (
-        site_id TEXT NOT NULL,
-        post_id INTEGER PRIMARY KEY,
-        title TEXT NOT NULL,
-        header_image BLOB,
-        date TEXT,
-        content TEXT,
-        FOREIGN KEY(site_id) REFERENCES sites(id)
+      site_id TEXT NOT NULL,
+      post_id INTEGER PRIMARY KEY,
+      title TEXT NOT NULL,
+      header_image BLOB,
+      date TEXT,
+      content TEXT,
+      FOREIGN KEY(site_id) REFERENCES sites(id)
     )",
+    [],
+  )?;
+
+  conn.execute(
+    "CREATE TABLE users (
+      id TEXT PRIMARY KEY,
+      username TEXT UNIQUE,
+      netlify_token TEXT NOT NULL,
+      token_issued_at INTEGER,
+      token_expires_at INTEGER,
+      last_login INTEGER,
+      created_at INTEGER NOT NULL,
+      settings BLOB
+    );",
     [],
   )?;
 
