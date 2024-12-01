@@ -1,4 +1,4 @@
-use crate::driftwood::{read_and_parse, template_html, NewSite, Post, SiteDetails};
+use crate::driftwood::{md_to_html, template_html, NewSite, Post, SiteDetails};
 use crate::netlify::Netlify;
 use crate::posts::PostRepository;
 use crate::response::{
@@ -366,119 +366,75 @@ pub fn deploy_site(site_id: String) -> Response {
     println!("Deployed site: {} ", &site_id);
     match Netlify::new() {
         Ok(netlify) => {
-
             let site = read_site(&site_id)
                 .expect("Failed to read site details from DB (result) in deploy_site")
                 .expect("Failed to read site details from DB (option) in deploy_site");
-
 
             // new behavior: read site from DB, get all posts, iterate through them
             // and build the HTML files, save to disk.
 
             // retrieve all the posts
-            let post_repo = PostRepository::new().expect("Failed to init post repository in create_post");
+            let post_repo =
+                PostRepository::new().expect("Failed to init post repository in create_post");
             let posts = post_repo.list_all(&site_id);
 
             // get posts out of the result
-            let posts = posts.expect(&format!("Failed to retrieve posts for site id {} ", &site_id));
+            let posts = posts.expect(&format!(
+                "Failed to retrieve posts for site id {} ",
+                &site_id
+            ));
 
-            // iterate over the vector
-            posts.iter().for_each(|post|{
-                println!("post title: {}", post.title);
-                // TODO next step: create a new parse function to accept
-                // the post struct INSTEAD of a markdown file
-                // Less to parse and just hand it to the template
-                // engine instead.
-                // read_and_parse(&md_file_name, &html_file_name);
-            });
-
-            return Response::success(String::from("Successfully tested the deploy changes, nothing deployed yet."));
-
-            // old behavior: read site and post data from disk and deploy
-
-            // first loop through the site's posts and convert them to HTML
+            // build paths to the site and posts directories on disk
             let site_path = SiteDetails::build_site_path(&site).expect("Failed to build site path");
 
-            // convert site_path PathBuf to string
-            let site_path = site_path.to_string_lossy().to_string();
-            let post_path = format!("{}/md_posts", site_path);
-            let html_post_path = format!("{}/posts", site_path);
-
-            // lol bad names... it's the PATH types of these string paths
-            let post_path_path = Path::new(&post_path);
-            let html_post_path_path = Path::new(&html_post_path);
-            if !post_path_path.exists() {
-                std::fs::create_dir(post_path_path)
-                    .expect("Failed to create this site's 'md_posts' directory");
+            if !site_path.exists() {
+                std::fs::create_dir_all(&site_path)
+                    .expect(&format!("Failed to create site id {} directory", &site_id));
             }
-            if !html_post_path_path.exists() {
-                std::fs::create_dir(html_post_path_path)
-                    .expect("Failed to create this site's 'md_posts' directory");
+
+            let site_path = site_path.to_string_lossy().to_string();
+
+            let html_post_path = format!("{}/posts", site_path);
+            let html_post_path = Path::new(&html_post_path);
+            if !html_post_path.exists() {
+                std::fs::create_dir_all(html_post_path).expect(&format!(
+                    "Failed to create site id {} 'posts' directory",
+                    &site_id
+                ));
             }
 
             let mut html_file_names = vec![];
 
-            // loop through md posts
-            for entry in std::fs::read_dir(post_path).unwrap() {
-                // md filename
-                let entry = entry.unwrap();
-                println!("> {:?}", entry.file_name().to_string_lossy());
-                // full path to md file
-                let md_file_name = entry.path();
-                println!("> {:?}", md_file_name);
-                // full path to html file
-                let html_file_name = format!(
-                    "{}/posts/{}.html",
-                    site_path,
-                    entry.file_name().to_string_lossy()
-                );
-                println!("> {:?}", html_file_name);
+            // iterate over the vector
+            posts.into_iter().for_each(|mut post| {
+                println!("post title: {}", post.title);
+                post.clean_filename()
+                    .expect("Failed to build post filename");
+                let html_file_name = format!("{}/posts/{}.html", &site_path, &post.filename,);
+                println!("Html file name: {} ", html_file_name);
+                // convert to HTML
+                md_to_html(&post, &html_file_name).expect(&format!(
+                    "failed to convert md to html, post name: {}",
+                    post.filename
+                ));
+                // save the file name for sending to Netlify
+                html_file_names.push(html_file_name);
+            });
 
-                if md_file_name.is_file() {
-                    let md_file_name = md_file_name.to_string_lossy();
-                    // let html_file_name = html_file_name.file_name().unwrap().to_string_lossy().into_owned();
-                    // convert to html
-                    let success = read_and_parse(&md_file_name, &html_file_name);
-                    match success {
-                        Ok(_) => {
-                            println!("Successfully converted markdown to HTML.");
-                            // add this html file name to a vector of strings
-                            html_file_names.push(html_file_name);
-                        }
-                        Err(e) => {
-                            println!("Failed to convert markdown to HTML.");
-                            println!("Error: {:?}", e);
-                        }
-                    }
-                }
+            // template all the HTML files with post data
+            // TODO - update template_html so it just retrieves post data from the DB or post structs
+            // right now it reads the HTML files and does it. lame and difficult.
+            if !template_html(html_file_names, &site_path, site.name.as_ref().unwrap()).unwrap() {
+                println!("Failed to template the HTML files, please review them.");
+                return Response::fail(String::from(
+                    "Failed to template the HTML files, please review them.",
+                ));
             }
 
-            // remove any dashes or underscores from the site name, replace with spaces
-            let clean_site_name = site
-                .name
-                .clone()
-                .unwrap()
-                .replace("-", " ")
-                .replace("_", " ");
-            let template_success =
-                template_html(html_file_names, site_path.clone(), clean_site_name);
-            match template_success {
-                Ok(_) => {
-                    println!("Successfully templated blog links.");
-                }
-                Err(e) => {
-                    println!("Failed to template blog links.");
-                    println!("Error: {:?}", e);
-                }
-            }
-
-            // second generate the sha1 hash of all the html files
-            let post_path = format!("{}/posts", site_path);
-
+            // generate the SHA1 hash
             let site_path = Path::new(&site_path);
-            let post_path = Path::new(&post_path);
 
-            let sha1_result = Netlify::generate_sha1_for_posts(site_path, post_path);
+            let sha1_result = Netlify::generate_sha1_for_posts(site_path, html_post_path);
 
             if sha1_result.is_ok() {
                 println!("> SHA1 hash generated successfully.");
@@ -510,7 +466,7 @@ pub fn deploy_site(site_id: String) -> Response {
 
                         // loop through our hashmap of file hashes
                         sha1_hashmap.files.iter().for_each(|file_hash| {
-                            // destructure the tuple (apparently iterating through hashmaps gives you tuples)
+                            // destructure the tuple
                             let (current_file_name, current_file_hash) = file_hash;
                             // if they match, print
                             if file == current_file_hash {
@@ -606,7 +562,6 @@ fn get_sites(netlify: Netlify) -> Vec<SiteDetails> {
         }
     }
 }
-
 
 /// Finds a site in the DB
 fn read_site(site_id: &str) -> Result<Option<SiteDetails>, String> {

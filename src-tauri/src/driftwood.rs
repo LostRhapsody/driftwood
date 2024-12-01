@@ -110,7 +110,7 @@ impl Post {
         }
     }
 
-    /// Cleans the filename by removing special characters and formatting it.
+    /// Builds the filename by starting with the title, removing special characters and formatting it.
     ///
     /// # Returns
     ///
@@ -383,6 +383,19 @@ impl SiteDetails {
     }
 }
 
+/// Accepts a Post and converts it's markdown contents into HTML
+pub fn md_to_html(post: &Post, html_filename: &str) -> Result<()> {
+    println!("Converting post {} to HTML.", post.title);
+    let parser = pulldown_cmark::Parser::new(&post.content);
+    println!("Parser created");
+    let mut html_output = String::new();
+    pulldown_cmark::html::push_html(&mut html_output, parser);
+    println!("HTML parsed");
+    fs::write(html_filename, &html_output)?;
+    println!("HTML wrote to disk");
+    Ok(())
+}
+
 pub fn read_and_parse(md_filename: &str, html_filename: &str) -> Result<bool, Box<dyn Error>> {
     println!(">> Reading file: {}", md_filename);
     let md_input = fs::read_to_string(md_filename)?;
@@ -400,8 +413,8 @@ pub fn read_and_parse(md_filename: &str, html_filename: &str) -> Result<bool, Bo
 
 pub fn template_html(
     posts: Vec<String>,
-    site_path: String,
-    site_name: String,
+    site_path: &str,
+    site_name: &str,
 ) -> Result<bool, Box<dyn Error>> {
     println!(">> Templating HTML");
 
@@ -509,7 +522,7 @@ pub fn template_html(
             date: date.clone(),
             excerpt: excerpt,
             image: image,
-            sitename: site_name.clone(),
+            sitename: site_name.to_string(),
             tags: tags.join(", "),
         };
         println!("Blog card context: {}", blog_card_context.tags);
@@ -525,7 +538,7 @@ pub fn template_html(
             title: post_title,
             content: post_file,
             date: date.clone(),
-            sitename: site_name.clone(),
+            sitename: site_name.to_string(),
         };
         println!(">> Templating post: {}", post_file_path.to_str().unwrap());
         let rendered_post = tt_post_page
@@ -537,7 +550,7 @@ pub fn template_html(
 
     println!(">> Templating index");
     let index_context = IndexContext {
-        sitename: site_name.clone(),
+        sitename: site_name.to_string(),
         blog_cards: rendered_blog_cards,
     };
 

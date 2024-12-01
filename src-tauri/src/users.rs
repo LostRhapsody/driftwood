@@ -1,9 +1,9 @@
 use crate::db::DB_PATH;
+use crate::netlify::TOKEN_EXPIRATION_DAYS;
+use chrono::Utc;
 use rusqlite::{params, Connection, OptionalExtension, Result};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
-use chrono::Utc;
-use crate::netlify::TOKEN_EXPIRATION_DAYS;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct User {
@@ -71,11 +71,7 @@ impl UserRepository {
 
     /// updates the user's token
     /// Handles updating timestamps automatically
-    pub fn update_token(
-        &self,
-        user_id: &str,
-        token: &str,
-    ) -> Result<()> {
+    pub fn update_token(&self, user_id: &str, token: &str) -> Result<()> {
         let issued_at = Utc::now().timestamp();
         let expires_at = issued_at + TOKEN_EXPIRATION_DAYS;
         self.conn.execute(
