@@ -34,6 +34,7 @@ pub fn initialize_database() -> Result<()> {
         [],
     )?;
 
+    // Note used yet
     // token_issued_at, expires_at, last_login, and created_at are all UNIX timestamps
     // settings blob is a JSON blob/string, username is optional
     conn.execute(
