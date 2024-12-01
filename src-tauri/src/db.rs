@@ -38,7 +38,7 @@ pub fn initialize_database() -> Result<()> {
     // token_issued_at, expires_at, last_login, and created_at are all UNIX timestamps
     // settings blob is a JSON blob/string, username is optional
     conn.execute(
-        "CREATE TABLE users (
+        "CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY,
       username TEXT UNIQUE,
       netlify_token TEXT NOT NULL,

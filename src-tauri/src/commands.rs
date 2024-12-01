@@ -202,7 +202,7 @@ pub fn refresh_sites(return_site: bool) -> Response {
 pub fn get_site_details(site_id: String) -> Response {
     println!("Getting details for site {}", site_id);
 
-    match read_site(site_id) {
+    match read_site(&site_id) {
         Ok(Some(site)) => {
             let mut response = Response::success(String::from("Retrieved site details"));
             response.body = Some(
@@ -363,13 +363,37 @@ pub fn get_post_details(post_id: u64, site_id: String) -> Response {
 
 #[tauri::command]
 pub fn deploy_site(site_id: String) -> Response {
+    println!("Deployed site: {} ", &site_id);
     match Netlify::new() {
         Ok(netlify) => {
-            let site = read_site(site_id)
+
+            let site = read_site(&site_id)
                 .expect("Failed to read site details from DB (result) in deploy_site")
                 .expect("Failed to read site details from DB (option) in deploy_site");
+
+
+            // new behavior: read site from DB, get all posts, iterate through them
+            // and build the HTML files, save to disk.
+
+            // retrieve all the posts
+            let post_repo = PostRepository::new().expect("Failed to init post repository in create_post");
+            let posts = post_repo.list_all(&site_id);
+
+            // get posts out of the result
+            let posts = posts.expect(&format!("Failed to retrieve posts for site id {} ", &site_id));
+
+            // iterate over the vector
+            posts.iter().for_each(|post|{
+                println!("post title: {}", post.title);
+            });
+
+            return Response::success(String::from("Successfully tested the deploy changes, nothing deployed yet."));
+
+            // old behavior: read site and post data from disk and deploy
+
             // first loop through the site's posts and convert them to HTML
             let site_path = SiteDetails::build_site_path(&site).expect("Failed to build site path");
+
             // convert site_path PathBuf to string
             let site_path = site_path.to_string_lossy().to_string();
             let post_path = format!("{}/md_posts", site_path);
@@ -515,9 +539,9 @@ pub fn deploy_site(site_id: String) -> Response {
 }
 
 #[tauri::command]
-pub fn get_post_list(site_id: String) -> Response {
+pub fn get_post_list(site_id: &str) -> Response {
     let post_repo = PostRepository::new().expect("Failed to init post repository in create_post");
-    let posts = post_repo.list_all(&site_id);
+    let posts = post_repo.list_all(site_id);
 
     match posts {
         Ok(posts) => {
@@ -538,7 +562,7 @@ pub fn delete_post(site_id: String, post_name: String) -> Response {
     let mut post = Post::new(post_name);
     let _ = post.clean_filename();
     println!("Post filename: {}", post.filename);
-    match read_site(site_id) {
+    match read_site(&site_id) {
         Ok(Some(site)) => {
             let site_path = site.build_site_path().expect("Failed to build site path");
 
@@ -578,11 +602,13 @@ fn get_sites(netlify: Netlify) -> Vec<SiteDetails> {
     }
 }
 
-fn read_site(site_id: String) -> Result<Option<SiteDetails>, String> {
+
+/// Finds a site in the DB
+fn read_site(site_id: &str) -> Result<Option<SiteDetails>, String> {
     let site_repo = SiteRepository::new()
         .map_err(|e| format!("Failed to initialize site repository: {}", e))?;
 
     site_repo
-        .read(&site_id)
+        .read(site_id)
         .map_err(|e| format!("Database error when reading site {}: {}", site_id, e))
 }
