@@ -4,10 +4,10 @@ use rusqlite::{Connection, Result};
 pub const DB_PATH: &str = "drift.db";
 
 pub fn initialize_database() -> Result<()> {
-  let conn = Connection::open(DB_PATH)?;
+    let conn = Connection::open(DB_PATH)?;
 
-  conn.execute(
-    "CREATE TABLE IF NOT EXISTS sites (
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS sites (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
       domain TEXT,
@@ -18,11 +18,11 @@ pub fn initialize_database() -> Result<()> {
       required TEXT,
       favicon TEXT
     )",
-    [],
-  )?;
+        [],
+    )?;
 
-  conn.execute(
-    "CREATE TABLE IF NOT EXISTS posts (
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS posts (
       site_id TEXT NOT NULL,
       post_id INTEGER PRIMARY KEY,
       title TEXT NOT NULL,
@@ -31,12 +31,14 @@ pub fn initialize_database() -> Result<()> {
       content TEXT,
       FOREIGN KEY(site_id) REFERENCES sites(id)
     )",
-    [],
-  )?;
+        [],
+    )?;
 
-  conn.execute(
-    "CREATE TABLE users (
-      id TEXT PRIMARY KEY,
+    // token_issued_at, expires_at, last_login, and created_at are all UNIX timestamps
+    // settings blob is a JSON blob/string, username is optional
+    conn.execute(
+        "CREATE TABLE users (
+      id INTEGER PRIMARY KEY,
       username TEXT UNIQUE,
       netlify_token TEXT NOT NULL,
       token_issued_at INTEGER,
@@ -45,22 +47,22 @@ pub fn initialize_database() -> Result<()> {
       created_at INTEGER NOT NULL,
       settings BLOB
     );",
-    [],
-  )?;
+        [],
+    )?;
 
-  // rename_field()?;
+    // rename_field()?;
 
-  Ok(())
+    Ok(())
 }
 
 // renames a field, retain as support for older dbs, but can remove it later
 pub fn rename_field() -> Result<()> {
-  let conn = Connection::open(DB_PATH)?;
+    let conn = Connection::open(DB_PATH)?;
 
-  conn.execute(
-      "ALTER TABLE sites RENAME COLUMN favicon_file TO favicon",
-      [],
-  )?;
+    conn.execute(
+        "ALTER TABLE sites RENAME COLUMN favicon_file TO favicon",
+        [],
+    )?;
 
-  Ok(())
+    Ok(())
 }

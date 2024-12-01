@@ -1,12 +1,12 @@
 use crate::driftwood::{read_and_parse, template_html, NewSite, Post, SiteDetails};
 use crate::netlify::Netlify;
+use crate::posts::PostRepository;
 use crate::response::{
     CreateSiteResponse, // Request,
     Response,
 };
 use crate::sites::SiteRepository;
 use serde::{Deserialize, Serialize};
-use crate::posts::PostRepository;
 use std::path::Path;
 
 /// TODO in edit post screen, add field for image, tags, and create a way to extract an excerpt from the post's contents.
@@ -47,7 +47,6 @@ pub fn netlify_logout() -> Response {
     }
 }
 
-/// TODO -  Store token in a record
 #[tauri::command]
 pub fn check_token() -> Response {
     println!("Checking token");
@@ -163,14 +162,14 @@ pub fn refresh_sites(return_site: bool) -> Response {
             let mut sites_json = Vec::new();
 
             // update sites in database
-            let site_repo = SiteRepository::new().expect("Failed to init site repository in refresh_sites");
+            let site_repo =
+                SiteRepository::new().expect("Failed to init site repository in refresh_sites");
 
             if let Err(e) = site_repo.refresh_sites(site_details.clone()) {
                 eprintln!("Failed to insert site data into database: {}", e);
             }
 
             if return_site {
-
                 // create JSON to send back to client
                 for site in site_details {
                     sites_json.push(
@@ -203,7 +202,7 @@ pub fn refresh_sites(return_site: bool) -> Response {
 pub fn get_site_details(site_id: String) -> Response {
     println!("Getting details for site {}", site_id);
 
-    match read_site(site_id){
+    match read_site(site_id) {
         Ok(Some(site)) => {
             let mut response = Response::success(String::from("Retrieved site details"));
             response.body = Some(
@@ -211,9 +210,9 @@ pub fn get_site_details(site_id: String) -> Response {
                     .expect("Failed to serialize SiteDetails in get_site_details"),
             );
             response
-        },
+        }
         Ok(None) => Response::success(String::from("No site by that ID found in database")),
-        Err(e) => Response::fail(format!("Error reading site details from db: {}", e )),
+        Err(e) => Response::fail(format!("Error reading site details from db: {}", e)),
     }
 }
 
@@ -225,11 +224,12 @@ pub fn list_sites() -> Response {
     let site_repo = SiteRepository::new().expect("Failed to init site repository in refresh_sites");
     match site_repo.list_all() {
         Ok(site_details_vec) => {
-            let site_json = serde_json::to_value(site_details_vec).expect("Failed to serialized site vector in list_sites");
+            let site_json = serde_json::to_value(site_details_vec)
+                .expect("Failed to serialized site vector in list_sites");
             let mut response = Response::success(String::from("Refreshed sites"));
             response.body = Some(site_json);
             return response;
-        },
+        }
         Err(e) => return Response::fail(format!("Failed to retrieve and list sites :{}", e)),
     }
 }
@@ -244,10 +244,12 @@ pub fn update_post(post_data: String, site_data: String) -> Response {
     let post_repo = PostRepository::new().expect("Failed to init post repository in create_post");
 
     // serialize the post_data into a JSON object for interactivity.
-    let post_data: PostData = serde_json::from_str(&post_data).expect("Failed to serialize the post data in create_post");
+    let post_data: PostData =
+        serde_json::from_str(&post_data).expect("Failed to serialize the post data in create_post");
 
     // serialize the site_data into a JSON object for interactivity.
-    let site_data: SiteDetails = serde_json::from_str(&site_data).expect("Failed to serialize site data in create_post");
+    let site_data: SiteDetails =
+        serde_json::from_str(&site_data).expect("Failed to serialize site data in create_post");
 
     // create a new post
     // date is set automatically
@@ -262,15 +264,20 @@ pub fn update_post(post_data: String, site_data: String) -> Response {
     let _ = updated_post.build_post_name();
 
     // create post in DB
-    match post_repo.update(&updated_post, &site_data.id.expect("Failed to retrieve site id in create_post")) {
+    match post_repo.update(
+        &updated_post,
+        &site_data
+            .id
+            .expect("Failed to retrieve site id in create_post"),
+    ) {
         Ok(()) => {
             println!("Post updated in DB");
             Response::success(String::from("success"))
-        },
+        }
         Err(err) => {
             println!("Failed to update post in DB: {}", err);
             Response::fail(format!("failed to update post: {}", err))
-        },
+        }
     }
 }
 
@@ -283,10 +290,12 @@ pub fn create_post(post_data: String, site_data: String) -> Response {
     let post_repo = PostRepository::new().expect("Failed to init post repository in create_post");
 
     // serialize the post_data into a JSON object for interactivity.
-    let post_data: PostData = serde_json::from_str(&post_data).expect("Failed to serialize the post data in create_post");
+    let post_data: PostData =
+        serde_json::from_str(&post_data).expect("Failed to serialize the post data in create_post");
 
     // serialize the site_data into a JSON object for interactivity.
-    let site_data: SiteDetails = serde_json::from_str(&site_data).expect("Failed to serialize site data in create_post");
+    let site_data: SiteDetails =
+        serde_json::from_str(&site_data).expect("Failed to serialize site data in create_post");
 
     // create a new post
     // date is set automatically
@@ -300,15 +309,20 @@ pub fn create_post(post_data: String, site_data: String) -> Response {
     let _ = new_post.build_post_name();
 
     // create post in DB
-    match post_repo.create(&new_post, &site_data.id.expect("Failed to retrieve site id in create_post")) {
+    match post_repo.create(
+        &new_post,
+        &site_data
+            .id
+            .expect("Failed to retrieve site id in create_post"),
+    ) {
         Ok(()) => {
             println!("Post created in DB");
             Response::success(String::from("success"))
-        },
+        }
         Err(err) => {
             println!("Failed to create post in DB: {}", err);
             Response::fail(format!("failed to create post: {}", err))
-        },
+        }
     }
 }
 
@@ -502,7 +516,6 @@ pub fn deploy_site(site_id: String) -> Response {
 
 #[tauri::command]
 pub fn get_post_list(site_id: String) -> Response {
-
     let post_repo = PostRepository::new().expect("Failed to init post repository in create_post");
     let posts = post_repo.list_all(&site_id);
 
@@ -538,7 +551,9 @@ pub fn delete_post(site_id: String, post_name: String) -> Response {
                 Err(e) => Response::fail(format!("Failed to delete post: {}", e)),
             }
         }
-        Ok(None) => Response::fail(String::from("Failed to get site details, nothing was returned from DB")),
+        Ok(None) => Response::fail(String::from(
+            "Failed to get site details, nothing was returned from DB",
+        )),
         Err(e) => Response::fail(format!("Failed to get site details: {}", e)),
     }
 }
@@ -567,6 +582,7 @@ fn read_site(site_id: String) -> Result<Option<SiteDetails>, String> {
     let site_repo = SiteRepository::new()
         .map_err(|e| format!("Failed to initialize site repository: {}", e))?;
 
-    site_repo.read(&site_id)
+    site_repo
+        .read(&site_id)
         .map_err(|e| format!("Database error when reading site {}: {}", site_id, e))
 }

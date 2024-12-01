@@ -17,6 +17,10 @@ use std::{
 };
 use webbrowser;
 
+// constants for expiration times
+pub const TOKEN_EXPIRATION_DAYS: i64 = 7;
+pub const TOKEN_EXPIRATION_SECONDS: i64 = TOKEN_EXPIRATION_DAYS * 24 * 60 * 60; // 7 days in seconds
+
 /// Netlify struct
 /// Contains the user agent, token, and base URL for the Netlify API
 pub struct Netlify {

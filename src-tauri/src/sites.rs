@@ -110,37 +110,36 @@ impl SiteRepository {
     }
 
     pub fn refresh_sites(mut self, netlify_sites: Vec<SiteDetails>) -> Result<()> {
-      // Start a transaction for atomicity
-      let tx = self.conn.transaction()?;
+        // Start a transaction for atomicity
+        let tx = self.conn.transaction()?;
 
-      for site in netlify_sites {
-          let site_id = match &site.id {
-              Some(id) => id,
-              None => continue // Skip sites without IDs
-          };
+        for site in netlify_sites {
+            let site_id = match &site.id {
+                Some(id) => id,
+                None => continue, // Skip sites without IDs
+            };
 
-          tx.execute(
-              "INSERT INTO sites (
+            tx.execute(
+                "INSERT INTO sites (
                   name, domain, id, url, screenshot_url, favicon
               ) VALUES (?1, ?2, ?3, ?4, ?5, ?6)
               ON CONFLICT(id) DO UPDATE SET
                   name = ?1, domain = ?2, url = ?4, screenshot_url = ?5",
-              params![
-                  site.name,
-                  site.domain,
-                  site_id,
-                  site.url,
-                  site.screenshot_url,
-                  site.favicon,
-              ],
-          )?;
-      }
+                params![
+                    site.name,
+                    site.domain,
+                    site_id,
+                    site.url,
+                    site.screenshot_url,
+                    site.favicon,
+                ],
+            )?;
+        }
 
-      // Commit the transaction
-      tx.commit()?;
-      Ok(())
-  }
-
+        // Commit the transaction
+        tx.commit()?;
+        Ok(())
+    }
 }
 
 #[cfg(test)]

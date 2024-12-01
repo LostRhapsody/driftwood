@@ -26,18 +26,19 @@ impl PostRepository {
             "SELECT title, header_image, date, content, post_id, site_id FROM posts WHERE site_id = ?1 AND post_id = ?2"
         )?;
 
-        stmt.query_row(params![site_id,post_id], |row| {
+        stmt.query_row(params![site_id, post_id], |row| {
             Ok(Post {
                 title: row.get(0)?,
                 image: row.get(1)?,
                 date: row.get(2)?,
                 content: row.get(3)?,
-                tags: vec![], // Load from tags table in future
+                tags: vec![],            // Load from tags table in future
                 filename: String::new(), // Generate from title when needed
                 post_id: row.get(4)?,
                 site_id: row.get(5)?,
             })
-        }).optional()
+        })
+        .optional()
     }
 
     pub fn update(&self, post: &Post, site_id: &str) -> Result<()> {
@@ -51,7 +52,10 @@ impl PostRepository {
     }
 
     pub fn delete(&self, site_id: &str, post_id: u64) -> Result<()> {
-        self.conn.execute("DELETE FROM posts WHERE site_id = ?1 and post_id = ?2", params![site_id,post_id])?;
+        self.conn.execute(
+            "DELETE FROM posts WHERE site_id = ?1 and post_id = ?2",
+            params![site_id, post_id],
+        )?;
         Ok(())
     }
 
@@ -66,10 +70,10 @@ impl PostRepository {
                 image: row.get(1)?,
                 date: row.get(2)?,
                 content: row.get(3)?,
-                tags: vec![], // Load from tags table in future
+                tags: vec![],            // Load from tags table in future
                 filename: String::new(), // Generate from title when needed
                 post_id: row.get(4)?, // post Id and site Id don't matter here, won't be getting this
-                site_id: row.get(5)?,  // shit from disk anymore
+                site_id: row.get(5)?, // shit from disk anymore
             })
         })?;
 

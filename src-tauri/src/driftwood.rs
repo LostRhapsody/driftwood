@@ -322,7 +322,7 @@ impl Post {
             image,
             tags,
             post_id: 0, // post Id and site Id don't matter here, won't be getting this
-            site_id: String::new(),  // shit from disk anymore
+            site_id: String::new(), // shit from disk anymore
         };
 
         println!("Post data: {:?}", post);
@@ -371,10 +371,8 @@ impl SiteDetails {
     }
 
     pub fn set_favicon(&mut self, path: &str) -> Result<(), String> {
-        self.favicon = Some(
-            std::fs::read(path)
-                .map_err(|e| format!("Failed to read favicon file: {}", e))?
-        );
+        self.favicon =
+            Some(std::fs::read(path).map_err(|e| format!("Failed to read favicon file: {}", e))?);
         Ok(())
     }
 

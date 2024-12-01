@@ -3,17 +3,18 @@
 
 pub mod commands;
 pub mod crypto;
+pub mod db;
 pub mod driftwood;
 pub mod netlify;
-pub mod response;
-pub mod db;
-pub mod sites;
 pub mod posts;
+pub mod response;
+pub mod sites;
+pub mod users;
 
 use crate::commands::{
     check_token, create_post, create_site, delete_post, delete_site, deploy_site, get_post_details,
     get_post_list, get_site_details, list_sites, netlify_login, netlify_logout, refresh_sites,
-    update_site, update_post,
+    update_post, update_site,
 };
 
 use dotenv::dotenv;
