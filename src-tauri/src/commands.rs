@@ -385,11 +385,11 @@ pub fn deploy_site(site_id: String) -> Response {
             // iterate over the vector
             posts.iter().for_each(|post|{
                 println!("post title: {}", post.title);
-                /// TODO next step: create a new parse function to accept
-                /// the post struct INSTEAD of a markdown file
-                /// Less to parse and just hand it to the template
-                /// engine instead.
-                /// read_and_parse(&md_file_name, &html_file_name);
+                // TODO next step: create a new parse function to accept
+                // the post struct INSTEAD of a markdown file
+                // Less to parse and just hand it to the template
+                // engine instead.
+                // read_and_parse(&md_file_name, &html_file_name);
             });
 
             return Response::success(String::from("Successfully tested the deploy changes, nothing deployed yet."));
