@@ -1,455 +1,93 @@
-@import '../node_modules/@mdxeditor/editor/dist/style.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-	--background: #ffffff;
-	--foreground: #171717;
-}
+@layer base {
+  :root {
+    --background: 46.67, 39.13%, 86.47%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 46.67, 39.13%, 86.47%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 201.18, 33.77%, 70.39%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 201.18, 33.77%, 70.39%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 52.67, 46.13%, 75.47%;
+    --input: 52.67, 46.13%, 75.47%;
+    --ring: 52.67, 46.13%, 75.47%;
+    --radius: 0.5rem;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+  }
 
-@media (prefers-color-scheme: dark) {
-	:root {
-		--background: #0a0a0a;
-		--foreground: #ededed;
-	}
-}
-
-body {
-	color: var(--foreground);
-	background: var(--background);
-	font-family: Arial, Helvetica, sans-serif;
-}
-
-@layer utilities {
-	.text-balance {
-		text-wrap: balance;
-	}
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+  }
 }
 
 @layer base {
-	:root {
-		--background: 0 0% 100%;
-		--foreground: 240 10% 3.9%;
-		--card: 0 0% 100%;
-		--card-foreground: 240 10% 3.9%;
-		--popover: 0 0% 100%;
-		--popover-foreground: 240 10% 3.9%;
-		--primary: 240 5.9% 10%;
-		--primary-foreground: 0 0% 98%;
-		--secondary: 240 4.8% 95.9%;
-		--secondary-foreground: 240 5.9% 10%;
-		--muted: 240 4.8% 95.9%;
-		--muted-foreground: 240 3.8% 46.1%;
-		--accent: 240 4.8% 95.9%;
-		--accent-foreground: 240 5.9% 10%;
-		--destructive: 0 84.2% 60.2%;
-		--destructive-foreground: 0 0% 98%;
-		--warning: 38 92% 50%;
-		--warning-foreground: 48 96% 89%;
-		--success: 120, 100%, 35%;
-		--success-foreground: 120, 100%, 95%;
-
-		--border: 240 5.9% 90%;
-		--input: 240 5.9% 90%;
-		--ring: 240 10% 3.9%;
-		--chart-1: 12 76% 61%;
-		--chart-2: 173 58% 39%;
-		--chart-3: 197 37% 24%;
-		--chart-4: 43 74% 66%;
-		--chart-5: 27 87% 67%;
-		--radius: 0.5rem;
-		--card-bg: #222;
-		--card-shadow: rgba(255, 255, 255, 0.1);
-		--input-bg: #333;
-		--input-shadow: inset 4px 4px 6px rgba(0, 0, 0, 0.6), inset -4px -4px 6px
-			rgba(255, 255, 255, 0.05);
-	}
-	.dark {
-		--background: 240 10% 3.9%;
-		--foreground: 0 0% 98%;
-		--card: 240 10% 3.9%;
-		--card-foreground: 0 0% 98%;
-		--popover: 240 10% 3.9%;
-		--popover-foreground: 0 0% 98%;
-		--primary: 0 0% 98%;
-		--primary-foreground: 240 5.9% 10%;
-		--secondary: 240 3.7% 15.9%;
-		--secondary-foreground: 0 0% 98%;
-		--muted: 240 3.7% 15.9%;
-		--muted-foreground: 240 5% 64.9%;
-		--accent: 240 3.7% 15.9%;
-		--accent-foreground: 0 0% 98%;
-		--destructive: 0 62.8% 30.6%;
-		--destructive-foreground: 0 0% 98%;
-		--warning: 48 96% 89%;
-		--warning-foreground: 38 92% 50%;
-		--success: 120, 50%, 25%;
-		--success-foreground:120, 100%, 90%;
-
-		--border: 240 3.7% 15.9%;
-		--input: 240 3.7% 15.9%;
-		--ring: 240 4.9% 83.9%;
-		--chart-1: 220 70% 50%;
-		--chart-2: 160 60% 45%;
-		--chart-3: 30 80% 55%;
-		--chart-4: 280 65% 60%;
-		--chart-5: 340 75% 55%;
-		--card-bg: #222;
-		--card-shadow: rgba(255, 255, 255, 0.1);
-		--input-bg: #333;
-		--input-shadow: inset 4px 4px 6px rgba(0, 0, 0, 0.6), inset -4px -4px 6px
-			rgba(255, 255, 255, 0.05);
-	}
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
 }
+
 
 @layer base {
-	* {
-		@apply border-border;
-	}
-	body {
-		@apply bg-background text-foreground;
-	}
-}
-
-.card {
-	background-color: var(--card-bg);
-	border-radius: 8px;
-	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
-	transition: all 0.3s ease;
-	margin-bottom: 2em;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	border: 1px solid var(--foreground);
-	height: 10rem;
-	aspect-ratio: 16 / 9;
-	overflow: hidden;
-	position: relative;
-}
-
-.card a {
-	text-decoration: none;
-	color: var(--text-color);
-	font-weight: bold;
-	font-size: 1.2em;
-	margin-bottom: 1em;
-}
-
-.card__content {
-	padding: 1.5em;
-}
-
-.card__image {
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
-	object-position: center;
-	border-radius: 8px;
-}
-
-.card__overlay {
-	position: absolute;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
-	background-color: #0a0a0a6b;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	opacity: 0;
-	transition: opacity 0.3s ease;
-}
-
-.card:hover .card__overlay {
-	opacity: 1;
-}
-
-.card__button {
-	width:100%;
-}
-
-.card__title {
-	color: white;
-	font-size: 1.2rem;
-	text-align: center;
-	padding: 0 10px;
-	max-width: 100%;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.card__link {
-	text-decoration: none;
-}
-
-.edit_card {
-	background-color: var(--card-bg);
-	box-shadow: 8px 8px 15px rgba(0, 0, 0, 0.6), -8px -8px 15px
-		rgba(255, 255, 255, 0.05);
-	border-radius: 12px;
-	padding: 1.5rem;
-	margin-bottom: 1.5rem;
-}
-
-.edit_input {
-	background-color: var(--input-bg);
-	box-shadow: var(--input-shadow);
-	border: none;
-	border-radius: 12px;
-	padding: 0.75rem;
-	color: var(--foreground);
-	width: 100%;
-}
-
-.edit_button {
-	border-radius: 12px;
-	padding: 1rem;
-	font-weight: bold;
-}
-
-.edit_save {
-	background-color: #007bff;
-	color: white;
-	box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.2), -5px -5px 15px
-		rgba(255, 255, 255, 0.05);
-}
-
-.edit_delete {
-	background-color: #ff4c4c;
-	color: white;
-	box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.4), -5px -5px 15px
-		rgba(255, 255, 255, 0.05);
-}
-
-.edit_alert {
-	border: 2px solid #ff4c4c;
-	padding: 1rem;
-	color: #ff4c4c;
-	background: rgba(255, 0, 0, 0.05);
-	border-radius: 12px;
-	text-align: center;
-}
-
-/* Markdown classes */
-.markdown {
-	/* Headers (1-6) */
-	h1,
-	h2,
-	h3,
-	h4,
-	h5,
-	h6 {
-		color: var(--foreground);
-		margin-bottom: 0.5em;
-	}
-
-	h1 {
-		font-size: 2em;
-	}
-	h2 {
-		font-size: 1.75em;
-	}
-	h3 {
-		font-size: 1.5em;
-	}
-	h4 {
-		font-size: 1.25em;
-	}
-	h5 {
-		font-size: 1.1em;
-	}
-	h6 {
-		font-size: 1em;
-	}
-
-	/* Code Blocks */
-	pre {
-		background-color: #2b2b2b;
-		padding: 1em;
-		border-radius: 8px;
-		margin: 1em 0;
-		overflow-x: auto;
-		font-family: "Courier New", monospace;
-		color: #e5e5e5;
-		/* Remove the stupid background color */
-		code {
-			background-color: #2b2b2b;
-		}
-	}
-
-	/* Inline Code */
-	code {
-		background-color: #333;
-		padding: 0.2em 0.4em;
-		border-radius: 4px;
-		font-family: "Courier New", monospace;
-		color: #e5e5e5;
-	}
-
-	/* Links */
-	a {
-		color: #1e90ff;
-		text-decoration: underline;
-		transition: color 0.3s ease;
-	}
-
-	a:hover {
-		color: #00bfff;
-	}
-
-	/* Images */
-	img {
-		display: block;
-		margin: 1em auto;
-		max-width: 100%;
-		border-radius: 8px;
-		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-	}
-
-	/* Blockquote Styles */
-	blockquote {
-		background-color: var(--bg-color);
-		border-left: 4px solid var(--accent-color);
-		margin: 1.5em 0;
-		padding: 1em;
-		font-style: italic;
-		position: relative;
-	}
-
-	blockquote::before {
-		content: '"';
-		font-size: 4em;
-		font-family: Georgia, serif;
-		color: var(--accent-color);
-		opacity: 0.2;
-		position: absolute;
-		top: -10px;
-		left: 10px;
-	}
-
-	blockquote p {
-		margin: 0;
-		padding-left: 2em;
-	}
-
-	blockquote cite {
-		display: block;
-		text-align: right;
-		margin-top: 1em;
-		font-style: normal;
-		font-weight: bold;
-		color: var(--accent-color);
-	}
-
-	/* Unordered List */
-	ul {
-		list-style-type: disc;
-		margin-left: 1.5em;
-		padding-left: 1em;
-	}
-
-	/* Ordered List */
-	ol {
-		list-style-type: decimal;
-		margin-left: 1.5em;
-		padding-left: 1em;
-	}
-
-	/* List items */
-	li {
-		margin-bottom: 0.5em;
-	}
-
-	/* Nested lists */
-	ul ul,
-	ol ol,
-	ul ol,
-	ol ul {
-		margin-left: 1.5em;
-	}
-}
-
-/* For the markdown editor! */
-.mdxeditor-toolbar {
-  @apply bg-primary border-b border-gray-700 p-2;
-}
-
-.mdxeditor-toolbar button {
-  @apply bg-inherit p-2 rounded;
-  @apply hover:bg-secondary p-2 rounded;
-}
-
-.mdxeditor-toolbar button[data-active='true'] {
-  @apply bg-secondary;
-}
-
-.mdxeditor {
-  @apply border border-gray-700 rounded-md bg-background;
-}
-
-.mdxeditor-content-editable {
-  @apply focus:outline-none;
-}
-
-.mdxeditor [data-lexical-decorator='true'] {
-  @apply my-4;
-}
-
-.markdown-separator {
-  @apply border-t border-gray-700 my-4;
-}
-
-/* Code block styling */
-.mdxeditor pre {
-  @apply bg-gray-900 rounded-md p-4;
-}
-
-/* Table styling */
-.mdxeditor table {
-  @apply border-collapse w-full;
-}
-
-.mdxeditor th,
-.mdxeditor td {
-  @apply border border-gray-700 p-2;
-}
-
-/* Link styling */
-.mdxeditor a {
-  @apply text-blue-400 hover:text-blue-300;
-}
-
-/* Fix dialog positioning */
-.mdxeditor-popup-container>div {
-  /* left: 25% !important; */
-  z-index: 50;
-  background-color: rgb(23, 23, 23) !important;
-  border: 1px solid rgb(55, 65, 81);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  min-width: 300px;
-}
-
-.mdxeditor-popup-container>div>div {
-  background-color: rgb(23, 23, 23) !important;
-	border-color: rgb(23, 23, 23) !important;
-}
-
-/* Style dialog inputs */
-.mdxeditor-popup-container>div input {
-  background-color: rgb(38, 38, 38);
-  border: 1px solid rgb(55, 65, 81);
-  border-radius: 0.25rem;
-  padding: 0.5rem;
-  width: 90%;
-  color: white;
-  margin: 0.5rem 0;
-}
-
-/* Style popover buttons */
-.mdxeditor-popup-container button {
-	color:white;
+  :root {
+    --sidebar-background: 46.67, 39.13%, 84.47%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 201.18, 33.77%, 70.39%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%
+  }
+  .dark {
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%
+  }
 }

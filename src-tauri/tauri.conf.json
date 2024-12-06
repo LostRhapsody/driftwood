@@ -48,7 +48,7 @@
     "windows": [
       {
         "fullscreen": false,
-        "height": 1000,
+        "height": 650,
         "resizable": true,
         "title": "Drift",
         "width": 1350
