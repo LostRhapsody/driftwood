@@ -1,6 +1,5 @@
 "use client";
 import * as React from "react";
-import { useState } from "react";
 import { PanelsTopLeft, Book, Settings, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +20,7 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
-
+import ShinyButton from "@/components/ui/shiny-button";
 // This is a placeholder for your sites data
 const sitesData = [
 	{ id: "1", name: "Site 1" },
@@ -54,34 +53,6 @@ export function DriftSidebar({
 
 	return (
 		<Sidebar>
-			{/* styled-jsx styles - scoped to this component only */}
-			<style jsx>{`
-				[data-sidebar="menu-button"]:focus {
-					animation: SideBarFocus 0.3s ease-in-out both alternate;
-				}
-
-				[data-sidebar="menu-button"] {
-					animation: SideBarUnFocus 0.3s ease-in-out both alternate;
-				}
-
-				@keyframes SideBarFocus {
-					0% {
-						transform: scale(1);
-					}
-					100% {
-						transform: scale(0.9);
-						animation: SideBarUnFocus;
-					}
-				}
-				@keyframes SideBarUnFocus {
-					0% {
-						transform: scale(0.9);
-					}
-					100% {
-						transform: scale(1);
-					}
-				}
-			`}</style>
 			<SidebarHeader>
 				<h1 className="mb-4 text-2xl">Drift</h1>
 				<Select>
@@ -105,11 +76,11 @@ export function DriftSidebar({
 							{menu.map((item) => (
 								<SidebarMenuItem key={item.title}>
 									<SidebarMenuButton
-									className="py-2 ps-8 my-2 SideBarFocus"
+									className="h-full"
 										asChild>
 										<a href={item.url}>
-											<item.icon />
-											<span>{item.title}</span>
+												<item.icon />
+												<span className="ms-4">{item.title}</span>
 										</a>
 									</SidebarMenuButton>
 								</SidebarMenuItem>
