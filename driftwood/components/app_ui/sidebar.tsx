@@ -1,7 +1,7 @@
 "use client";
-
 import * as React from "react";
-import { PanelTop, StickyNote, Settings, User, LogOut } from "lucide-react";
+import { useState } from "react";
+import { PanelsTopLeft, Book, Settings, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
 	Select,
@@ -31,19 +31,14 @@ const sitesData = [
 
 const menu = [
 	{
+		title: "Dashboard",
+		url: "#",
+		icon: PanelsTopLeft,
+	},
+	{
 		title: "Posts",
 		url: "#",
-		icon: StickyNote,
-	},
-	{
-		title: "Site",
-		url: "#",
-		icon: PanelTop,
-	},
-	{
-		title: "User",
-		url: "#",
-		icon: User,
+		icon: Book,
 	},
 	{
 		title: "Settings",
@@ -59,29 +54,59 @@ export function DriftSidebar({
 
 	return (
 		<Sidebar>
+			{/* styled-jsx styles - scoped to this component only */}
+			<style jsx>{`
+				[data-sidebar="menu-button"]:focus {
+					animation: SideBarFocus 0.3s ease-in-out both alternate;
+				}
+
+				[data-sidebar="menu-button"] {
+					animation: SideBarUnFocus 0.3s ease-in-out both alternate;
+				}
+
+				@keyframes SideBarFocus {
+					0% {
+						transform: scale(1);
+					}
+					100% {
+						transform: scale(0.9);
+						animation: SideBarUnFocus;
+					}
+				}
+				@keyframes SideBarUnFocus {
+					0% {
+						transform: scale(0.9);
+					}
+					100% {
+						transform: scale(1);
+					}
+				}
+			`}</style>
 			<SidebarHeader>
-        <h1>Drift</h1>
-        <Select>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Select a site" />
-          </SelectTrigger>
-          <SelectContent>
-            {sitesData.map((site) => (
-              <SelectItem key={site.id} value={site.id}>
-                {site.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </SidebarHeader>
-			<SidebarContent className="h-full">
-				<SidebarGroup className="h-full">
-					<SidebarGroupContent className="h-full">
-						<SidebarMenu className="h-full flex justify-evenly">
+				<h1 className="mb-4 text-2xl">Drift</h1>
+				<Select>
+					<SelectTrigger className="w-3/4 mx-auto">
+						<SelectValue placeholder="Select a site" />
+					</SelectTrigger>
+					<SelectContent>
+						{sitesData.map((site) => (
+							<SelectItem key={site.id} value={site.id}>
+								{site.name}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+			</SidebarHeader>
+			<hr className="my-2" />
+			<SidebarContent>
+				<SidebarGroup>
+					<SidebarGroupContent>
+						<SidebarMenu>
 							{menu.map((item) => (
-								<SidebarMenuItem
-								key={item.title}>
-									<SidebarMenuButton asChild>
+								<SidebarMenuItem key={item.title}>
+									<SidebarMenuButton
+									className="py-2 ps-8 my-2 SideBarFocus"
+										asChild>
 										<a href={item.url}>
 											<item.icon />
 											<span>{item.title}</span>
@@ -94,7 +119,10 @@ export function DriftSidebar({
 				</SidebarGroup>
 			</SidebarContent>
 			<SidebarFooter>
-				<Button><LogOut/>Logout</Button>
+				<Button variant="outline">
+					<User />
+					Profile
+				</Button>
 			</SidebarFooter>
 		</Sidebar>
 	);
