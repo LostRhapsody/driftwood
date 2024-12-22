@@ -21,7 +21,6 @@ import { ViewVerticalIcon } from "@radix-ui/react-icons"
 import {
   motion,
   type AnimationProps,
-  type HTMLMotionProps,
 } from "framer-motion";
 
 const SIDEBAR_COOKIE_NAME = "sidebar:state"

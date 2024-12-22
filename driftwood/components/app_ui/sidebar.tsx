@@ -1,5 +1,6 @@
 "use client";
-import * as React from "react";
+import { useEffect, useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { PanelsTopLeft, Book, Settings, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,28 +21,26 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import ShinyButton from "@/components/ui/shiny-button";
-// This is a placeholder for your sites data
-const sitesData = [
-	{ id: "1", name: "Site 1" },
-	{ id: "2", name: "Site 2" },
-	{ id: "3", name: "Site 3" },
-];
+import { cn } from "@/lib/utils";
+import AnimatedGradientText from "@/components/ui/animated-gradient-text";
+import { type DriftResponse, processResponse } from "@/types/response";
+import type { Site } from "@/types/site";
+import { useSelectedSite } from "@/contexts/SelectedSiteContext";
 
 const menu = [
 	{
 		title: "Dashboard",
-		url: "#",
+		url: "/",
 		icon: PanelsTopLeft,
 	},
 	{
 		title: "Posts",
-		url: "#",
+		url: "/posts",
 		icon: Book,
 	},
 	{
 		title: "Settings",
-		url: "#",
+		url: "/settings",
 		icon: Settings,
 	},
 ];
@@ -49,22 +48,55 @@ const menu = [
 export function DriftSidebar({
 	className,
 }: React.ComponentProps<typeof Sidebar>) {
-	const [selectedSite, setSelectedSite] = React.useState(sitesData[0].id);
+	const { selectedSite, setSelectedSite } = useSelectedSite();
+	const [sitesData, setSiteData] = useState<Site[]>([]);
+
+	useEffect(() => {
+		const loadSites = async () => {
+			const response = await invoke<DriftResponse<Site[]>>("list_sites");
+
+			const result = processResponse(response);
+
+			if (result) setSiteData(response.body);
+			else alert("Failed to load sites");
+
+			setSelectedSite({ name: response.body[0].name, id: response.body[0].id });
+		};
+
+		loadSites();
+	}, [setSelectedSite]);
 
 	return (
 		<Sidebar>
 			<SidebarHeader>
-				<h1 className="mb-4 text-2xl">Drift</h1>
-				<Select>
+				<a href="/">
+					<AnimatedGradientText className="mb-4 text-2xl text-center w-5/6 max-w-full">
+						<span
+							className={cn(
+								"inline animate-gradient bg-gradient-to-r from-[#ffaa40] via-[#9c40ff] to-[#ffaa40] bg-[length:var(--bg-size)_100%] bg-clip-text text-transparent w-full",
+							)}
+						>
+							Drift
+						</span>
+					</AnimatedGradientText>
+				</a>
+				<Select
+					value={selectedSite.id}
+					onValueChange={(value) => {
+						const site = sitesData.find((site) => site.id === value);
+						if (site) setSelectedSite(site);
+					}}
+				>
 					<SelectTrigger className="w-3/4 mx-auto">
 						<SelectValue placeholder="Select a site" />
 					</SelectTrigger>
 					<SelectContent>
-						{sitesData.map((site) => (
-							<SelectItem key={site.id} value={site.id}>
-								{site.name}
-							</SelectItem>
-						))}
+						{sitesData && (
+							sitesData.map((site) => (
+								<SelectItem key={site.id} value={site.id}>
+									{site.name}
+								</SelectItem>
+							)))}
 					</SelectContent>
 				</Select>
 			</SidebarHeader>
@@ -75,12 +107,10 @@ export function DriftSidebar({
 						<SidebarMenu>
 							{menu.map((item) => (
 								<SidebarMenuItem key={item.title}>
-									<SidebarMenuButton
-									className="h-full"
-										asChild>
+									<SidebarMenuButton className="h-full" asChild>
 										<a href={item.url}>
-												<item.icon />
-												<span className="ms-4">{item.title}</span>
+											<item.icon />
+											<span className="ms-4">{item.title}</span>
 										</a>
 									</SidebarMenuButton>
 								</SidebarMenuItem>
@@ -90,10 +120,12 @@ export function DriftSidebar({
 				</SidebarGroup>
 			</SidebarContent>
 			<SidebarFooter>
-				<Button variant="outline">
-					<User />
-					Profile
-				</Button>
+				<a href="/profile" className="w-full">
+					<Button variant="outline" className="w-full">
+						<User />
+						Profile
+					</Button>
+				</a>
 			</SidebarFooter>
 		</Sidebar>
 	);

@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { DriftSidebar } from "@/components/app_ui/sidebar"
 import { SidebarProvider } from "@/components/ui/sidebar"
+import { SelectedSiteProvider } from "@/contexts/SelectedSiteContext";
 import '@mdxeditor/editor/style.css'
 
 const geistSans = localFont({
@@ -31,14 +32,16 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <SidebarProvider>
-          <div className="flex h-screen">
-            <DriftSidebar />
-            <main className="flex-1 overflow-auto p-4">
-              {children}
-            </main>
-          </div>
-        </SidebarProvider>
+        <SelectedSiteProvider>
+          <SidebarProvider>
+            <div className="flex h-screen">
+              <DriftSidebar />
+              <main className="flex-1 overflow-auto p-4">
+                {children}
+              </main>
+            </div>
+          </SidebarProvider>
+        </SelectedSiteProvider>
       </body>
     </html>
   );

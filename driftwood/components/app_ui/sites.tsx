@@ -16,15 +16,7 @@ import {
 	processResponse
 } from "@/types/response";
 
-type Site = {
-	name: string;
-	domain: string;
-	id: string;
-	ssl: boolean;
-	url: string;
-	screenshot_url: string;
-	required: string;
-};
+import type { Site } from "@/types/site";
 
 // biome-ignore lint/suspicious/noExplicitAny: <explanation>
 export default function Sites(onEditClick:any) {

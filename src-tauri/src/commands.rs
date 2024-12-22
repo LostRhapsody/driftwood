@@ -421,9 +421,6 @@ pub fn deploy_site(site_id: String) -> Response {
                 html_file_names.push(html_file_name);
             });
 
-            // template all the HTML files with post data
-            // TODO - update template_html so it just retrieves post data from the DB or post structs
-            // right now it reads the HTML files and does it. lame and difficult.
             if !template_html(html_file_names, &site_path, site.name.as_ref().unwrap()).unwrap() {
                 println!("Failed to template the HTML files, please review them.");
                 return Response::fail(String::from(
