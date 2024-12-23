@@ -84,4 +84,34 @@ impl PostRepository {
 
         Ok(posts)
     }
+
+    pub fn get_recent_posts(&self, site_id: &str, limit: i32) -> Result<Vec<Post>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT title, date, content, header_image, post_id, site_id
+             FROM posts
+             WHERE site_id = ?1
+             ORDER BY date DESC
+             LIMIT ?2",
+        )?;
+
+        let posts = stmt.query_map(params![site_id, limit], |row| {
+            Ok(Post {
+                title: row.get(0)?,
+                date: row.get(1)?,
+                content: row.get(2)?,
+                image: row.get(3)?,
+                tags: vec![], // Tags would need a separate table/query
+                filename: String::new(),
+                post_id: row.get(4)?, // post Id and site Id don't matter here, won't be getting this
+                site_id: row.get(5)?, // shit from disk anymore
+            })
+        })?;
+
+        let mut results = Vec::new();
+        for post in posts {
+            results.push(post?);
+        }
+
+        Ok(results)
+    }
 }

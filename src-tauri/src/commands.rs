@@ -9,6 +9,8 @@ use crate::sites::SiteRepository;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
+pub const RECENT_POST_LIMIT: i32 = 5;
+
 /// TODO in edit post screen, add field for image, tags, and create a way to extract an excerpt from the post's contents.
 
 // This is like the post struct from driftwood.rs, but
@@ -350,10 +352,44 @@ pub fn get_post_details(post_id: u64, site_id: String) -> Response {
     // let post = post.read_post_from_disk(site_id);
     match post {
         Ok(post) => {
-            let mut response = Response::success(String::from("Read post from disk"));
+            let mut response = Response::success(String::from("Read post from database"));
             response.body = Some(
                 serde_json::to_value(post)
                     .expect("Failed to serialize Post to JSON in get_post_details"),
+            );
+            response
+        }
+        Err(e) => Response::fail(format!("Failed to read post from database: {}", e)),
+    }
+}
+
+/// Retrieves the 5 most recent posts
+///
+/// # Arguments
+///
+/// * `site_id` a string, the ID of the website
+///
+/// # Returns
+///
+/// A Drift Reponse struct, the body contains the post data structure
+#[tauri::command]
+pub fn get_recent_posts(post_id: u64, site_id: String) -> Response {
+    println!(
+        "Running get post details for site: {}, post name: {}",
+        site_id, post_id
+    );
+
+    // init repo to save post in DB
+    let post_repo = PostRepository::new().expect("Failed to init post repository in create_post");
+    let post = post_repo.get_recent_posts(&site_id, RECENT_POST_LIMIT);
+
+    // let post = post.read_post_from_disk(site_id);
+    match post {
+        Ok(post) => {
+            let mut response = Response::success(String::from("Read posts from database"));
+            response.body = Some(
+                serde_json::to_value(post)
+                    .expect("Failed to serialize Post to JSON in get_recent_posts"),
             );
             response
         }

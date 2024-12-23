@@ -1,20 +1,15 @@
 "use client";
 import React, { createContext, useContext, useState, type ReactNode } from "react";
-
-type SelectedSite = {
-  name: string;
-    id: string;
-}
-
+import type { Site } from "@/types/site";
 interface SelectedSiteContextProps {
-  selectedSite: SelectedSite;
-  setSelectedSite: (site: SelectedSite) => void;
+  selectedSite: Site;
+  setSelectedSite: (site: Site) => void;
 }
 
 const SelectedSiteContext = createContext<SelectedSiteContextProps | undefined>(undefined);
 
 export const SelectedSiteProvider = ({ children }: { children: ReactNode }) => {
-  const [selectedSite, setSelectedSite] = useState<SelectedSite>({ name: "", id: "" });
+  const [selectedSite, setSelectedSite] = useState<Site>({} as Site);
 
   return (
     <SelectedSiteContext.Provider value={{ selectedSite, setSelectedSite }}>

@@ -1,6 +1,4 @@
 "use client";
-import { useEffect, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import { PanelsTopLeft, Book, Settings, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,9 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import AnimatedGradientText from "@/components/ui/animated-gradient-text";
-import { type DriftResponse, processResponse } from "@/types/response";
 import type { Site } from "@/types/site";
-import { useSelectedSite } from "@/contexts/SelectedSiteContext";
 
 const menu = [
 	{
@@ -47,25 +43,14 @@ const menu = [
 
 export function DriftSidebar({
 	className,
-}: React.ComponentProps<typeof Sidebar>) {
-	const { selectedSite, setSelectedSite } = useSelectedSite();
-	const [sitesData, setSiteData] = useState<Site[]>([]);
-
-	useEffect(() => {
-		const loadSites = async () => {
-			const response = await invoke<DriftResponse<Site[]>>("list_sites");
-
-			const result = processResponse(response);
-
-			if (result) setSiteData(response.body);
-			else alert("Failed to load sites");
-
-			setSelectedSite({ name: response.body[0].name, id: response.body[0].id });
-		};
-
-		loadSites();
-	}, [setSelectedSite]);
-
+	selectedSite,
+	setSelectedSite,
+	sitesData,
+}: React.ComponentProps<typeof Sidebar> & {
+	selectedSite: Site;
+	setSelectedSite: (site: Site) => void;
+	sitesData: Site[];
+}) {
 	return (
 		<Sidebar>
 			<SidebarHeader>

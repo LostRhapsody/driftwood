@@ -4,7 +4,12 @@ import "./globals.css";
 import { DriftSidebar } from "@/components/app_ui/sidebar"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { SelectedSiteProvider } from "@/contexts/SelectedSiteContext";
+import { useEffect, useState } from "react";
+import { useSelectedSite } from "@/contexts/SelectedSiteContext";
+import { invoke } from "@tauri-apps/api/core";
 import '@mdxeditor/editor/style.css'
+import { type DriftResponse, processResponse } from "@/types/response";
+import type { Site } from "@/types/site";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -27,6 +32,24 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const { selectedSite, setSelectedSite } = useSelectedSite();
+  const [sitesData, setSiteData] = useState<Site[]>([]);
+
+  useEffect(() => {
+    const loadSites = async () => {
+      const response = await invoke<DriftResponse<Site[]>>("list_sites");
+
+      const result = processResponse(response);
+
+      if (result) setSiteData(response.body);
+      else alert("Failed to load sites");
+
+      setSelectedSite(sitesData[0]);
+    };
+
+    loadSites();
+  }, [setSelectedSite,sitesData]);
+
   return (
     <html lang="en">
       <body
@@ -35,7 +58,11 @@ export default function RootLayout({
         <SelectedSiteProvider>
           <SidebarProvider>
             <div className="flex h-screen">
-              <DriftSidebar />
+              <DriftSidebar
+              selectedSite={selectedSite}
+              setSelectedSite={setSelectedSite}
+              sitesData={sitesData}
+              />
               <main className="flex-1 overflow-auto p-4">
                 {children}
               </main>
