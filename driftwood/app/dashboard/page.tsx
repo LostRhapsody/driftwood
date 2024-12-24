@@ -7,6 +7,7 @@ import StatCard from "@/components/app_ui/DashboardCard";
 import { open } from "@tauri-apps/plugin-shell";
 import RecentPosts from "@/components/app_ui/post_grid";
 import type { Post } from "@/types/post";
+import AnimatedGradientDemo from "@/components/app_ui/BentoCard";
 
 export default function dashboard() {
   const { selectedSite } = useSelectedSite();
@@ -64,7 +65,6 @@ export default function dashboard() {
   return (
     <div className="items-center justify-center">
 
-      {/* TODO - Implement the following functions */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {deployUrl !== "" && <StatCard type="deployStat" onClick={() => { }} value={deployUrl} />}
         <StatCard type="posts" onClick={() => { }} value={postCount} />

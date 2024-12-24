@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import AnimatedGradientText from "@/components/ui/animated-gradient-text";
 import { useSelectedSite } from "@/contexts/SelectedSiteContext";
+import VariableFontHoverByLetter from "@/components/app_ui/font_hover";
 
 const menu = [
 	{
@@ -85,9 +86,15 @@ export function DriftSidebar({ className, setCurrentPage }: React.ComponentProps
 							{menu.map((item) => (
 								<SidebarMenuItem key={item.title}>
 									<SidebarMenuButton className="h-full" asChild onClick={() => setCurrentPage(item.title)}>
-										<span>
+										<span className="grotesk text-xl">
 											<item.icon />
-											<span className="ms-4">{item.title}</span>
+											<VariableFontHoverByLetter
+												label={item.title}
+												staggerDuration={0.02}
+												fromFontVariationSettings="'wght' 400, 'slnt' 0"
+												toFontVariationSettings="'wght' 900, 'slnt' -10"
+											/>
+											{/* <span className="ms-4">{item.title}</span> */}
 										</span>
 									</SidebarMenuButton>
 								</SidebarMenuItem>

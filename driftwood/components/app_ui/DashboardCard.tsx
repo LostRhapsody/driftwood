@@ -5,12 +5,12 @@ import {
   Rocket,
   Globe,
   PencilLine,
-  Construction,
   Settings,
   LayoutDashboard,
   Activity,
   Terminal
 } from "lucide-react";
+import BentoCard from "./BentoCard";
 
 interface StatCardProps {
   type: 'posts' | 'deploy' | 'visit' | 'newPost' | string;
@@ -97,24 +97,26 @@ const StatCard = ({ type, value, onClick }: StatCardProps) => {
   const content = getCardContent();
 
   return (
-    <Card onClick={onClick}
-      className={cn(
-        "bg-card hover:bg-accent/50 transition-colors",
-        content.action && "cursor-pointer"
-      )}
-    >
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between space-x-4">
-          <div className="flex items-center space-x-4">
-            {content.icon}
-            <div>
-              <p className="text-md text-muted-foreground">{content.label}</p>
-              {content.value && <p className="text-2xl font-bold">{content.value}</p>}
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <span>
+      <Card onClick={onClick}
+        className={cn(
+          "bg-card hover:bg-accent/50 transition-colors mb-8",
+          content.action && "cursor-pointer"
+        )}
+      >
+        {/*
+          TODO  - add a color prop to this comp so colors can be different,
+          and make sure the animation and size of the cards are smooth
+         */}
+        <BentoCard
+          title={content.label}
+          value={content.value}
+          icon={content.icon}
+          colors={["#3B82F6", "#60A5FA", "#93C5FD"]}
+          delay={0.2}
+        />
+      </Card>
+    </span>
   );
 };
 
