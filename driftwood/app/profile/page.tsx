@@ -3,7 +3,7 @@ import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AnimatedGradientText from "@/components/ui/animated-gradient-text";
 
-export default function home() {
+export default function Profile() {
     return (
     <div className="items-center justify-center">
       User's Profile

@@ -373,11 +373,8 @@ pub fn get_post_details(post_id: u64, site_id: String) -> Response {
 ///
 /// A Drift Reponse struct, the body contains the post data structure
 #[tauri::command]
-pub fn get_recent_posts(post_id: u64, site_id: String) -> Response {
-    println!(
-        "Running get post details for site: {}, post name: {}",
-        site_id, post_id
-    );
+pub fn get_recent_posts(site_id: String) -> Response {
+    println!("Running get recent posts for site: {}", site_id);
 
     // init repo to save post in DB
     let post_repo = PostRepository::new().expect("Failed to init post repository in create_post");
@@ -574,6 +571,19 @@ pub fn delete_post(site_id: String, post_name: String) -> Response {
         )),
         Err(e) => Response::fail(format!("Failed to get site details: {}", e)),
     }
+}
+
+#[tauri::command]
+pub fn get_post_count(site_id: &str) -> Response {
+
+    println!("Getting number of posts for site {} ", site_id);
+
+    let post_repo = PostRepository::new().expect("Failed to init post repository in create_post");
+    let count = post_repo.get_post_count(site_id).expect("Failed to get number of posts");
+
+    let mut response = Response::success(format!("Found {} posts", count));
+    response.body = Some(serde_json::json!(count));
+    response
 }
 
 /// Get all the sites for the user

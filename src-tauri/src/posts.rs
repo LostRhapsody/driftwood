@@ -114,4 +114,22 @@ impl PostRepository {
 
         Ok(results)
     }
+
+    pub fn get_post_count(&self, site_id: &str) -> Result<i64> {
+
+        let mut stmt = self.conn.prepare(
+         "SELECT COUNT(*) FROM posts WHERE site_id = ?"
+        )?;
+
+        let counts = stmt.query_map(params![site_id], |row| {
+            Ok(row.get(0)?)
+        })?;
+
+        let mut result: i64 = 0;
+        for count in counts {
+            result = count?;
+        }
+
+        Ok(result)
+    }
 }

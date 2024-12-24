@@ -8,4 +8,5 @@ export type Post = {
 	filename: string;
 	excerpt: string;
 	content: string;
+	published: boolean;
 };

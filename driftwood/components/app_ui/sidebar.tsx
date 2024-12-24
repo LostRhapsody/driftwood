@@ -21,51 +21,42 @@ import {
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import AnimatedGradientText from "@/components/ui/animated-gradient-text";
-import type { Site } from "@/types/site";
+import { useSelectedSite } from "@/contexts/SelectedSiteContext";
 
 const menu = [
 	{
 		title: "Dashboard",
-		url: "/",
 		icon: PanelsTopLeft,
 	},
 	{
 		title: "Posts",
-		url: "/posts",
 		icon: Book,
 	},
 	{
 		title: "Settings",
-		url: "/settings",
 		icon: Settings,
 	},
 ];
 
-export function DriftSidebar({
-	className,
-	selectedSite,
-	setSelectedSite,
-	sitesData,
-}: React.ComponentProps<typeof Sidebar> & {
-	selectedSite: Site;
-	setSelectedSite: (site: Site) => void;
-	sitesData: Site[];
+export function DriftSidebar({ className, setCurrentPage }: React.ComponentProps<typeof Sidebar> & {
+	className?: string,
+	setCurrentPage: (page: string) => void,
 }) {
+	const { sitesData, selectedSite, setSelectedSite } = useSelectedSite();
+
 	return (
 		<Sidebar>
 			<SidebarHeader>
-				<a href="/">
-					<AnimatedGradientText className="mb-4 text-2xl text-center w-5/6 max-w-full">
-						<span
-							className={cn(
-								"inline animate-gradient bg-gradient-to-r from-[#ffaa40] via-[#9c40ff] to-[#ffaa40] bg-[length:var(--bg-size)_100%] bg-clip-text text-transparent w-full",
-							)}
-						>
-							Drift
-						</span>
-					</AnimatedGradientText>
-				</a>
-				<Select
+				<AnimatedGradientText className="mb-4 text-2xl text-center w-5/6 max-w-full">
+					<span
+						className={cn(
+							"inline animate-gradient bg-gradient-to-r from-[#ffaa40] via-[#9c40ff] to-[#ffaa40] bg-[length:var(--bg-size)_100%] bg-clip-text text-transparent w-full",
+						)}
+					>
+						Drift
+					</span>
+				</AnimatedGradientText>
+				{selectedSite?.id && (<Select
 					value={selectedSite.id}
 					onValueChange={(value) => {
 						const site = sitesData.find((site) => site.id === value);
@@ -84,6 +75,7 @@ export function DriftSidebar({
 							)))}
 					</SelectContent>
 				</Select>
+				)}
 			</SidebarHeader>
 			<hr className="my-2" />
 			<SidebarContent>
@@ -92,11 +84,11 @@ export function DriftSidebar({
 						<SidebarMenu>
 							{menu.map((item) => (
 								<SidebarMenuItem key={item.title}>
-									<SidebarMenuButton className="h-full" asChild>
-										<a href={item.url}>
+									<SidebarMenuButton className="h-full" asChild onClick={() => setCurrentPage(item.title)}>
+										<span>
 											<item.icon />
 											<span className="ms-4">{item.title}</span>
-										</a>
+										</span>
 									</SidebarMenuButton>
 								</SidebarMenuItem>
 							))}
@@ -105,12 +97,10 @@ export function DriftSidebar({
 				</SidebarGroup>
 			</SidebarContent>
 			<SidebarFooter>
-				<a href="/profile" className="w-full">
-					<Button variant="outline" className="w-full">
-						<User />
-						Profile
-					</Button>
-				</a>
+				<Button variant="outline" onClick={() => setCurrentPage("Profile")}>
+					<User />
+					Profile
+				</Button>
 			</SidebarFooter>
 		</Sidebar>
 	);
