@@ -1,10 +1,10 @@
 "use client";
+import { useState } from 'react';
 import localFont from "next/font/local";
 import "./globals.css";
 import { DriftSidebar } from "@/components/app_ui/sidebar"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { SelectedSiteProvider } from "@/contexts/SelectedSiteContext";
-import { useState } from "react";
 import Dashboard from "./dashboard/page";
 import Posts from "./posts/page";
 import Profile from "./profile/page";
@@ -32,7 +32,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [currentPage, setCurrentPage] = useState("EditPost");
+  const [currentPage, setCurrentPage] = useState("Dashboard");
 
   return (
     <html lang="en">
@@ -50,9 +50,9 @@ export default function RootLayout({
                   {currentPage}
                 </h1>
                 <hr className="mb-2" />
-                {currentPage === "Dashboard" && <Dashboard />}
+                {currentPage === "Dashboard" && <Dashboard setCurrentPage={setCurrentPage} />}
                 {currentPage === "Posts" && <Posts />}
-                {currentPage === "EditPost" && <EditPost post={{}} onSave={{}} />}
+                {currentPage === "EditPost" && <EditPost post={{}}  />}
                 {currentPage === "Profile" && <Profile />}
                 {currentPage === "Settings" && <Settings />}
                 {children}

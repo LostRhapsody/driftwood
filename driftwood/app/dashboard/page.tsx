@@ -7,9 +7,10 @@ import StatCard from "@/components/app_ui/DashboardCard";
 import { open } from "@tauri-apps/plugin-shell";
 import RecentPosts from "@/components/app_ui/post_grid";
 import type { Post } from "@/types/post";
-import AnimatedGradientDemo from "@/components/app_ui/BentoCard";
 
-export default function dashboard() {
+export default function dashboard({ setCurrentPage }:{
+	setCurrentPage: (page: string) => void,
+}) {
   const { selectedSite } = useSelectedSite();
   const [postCount, setPostCount] = useState(0);
   const [deployUrl, setDeployUrl] = useState("");
@@ -70,7 +71,7 @@ export default function dashboard() {
         <StatCard type="posts" onClick={() => { }} value={postCount} />
         <StatCard type="visit" onClick={handleVisit} value={null} />
         <StatCard type="deploySite" onClick={() => { }} value={null} />
-        <StatCard type="newPost" onClick={() => { }} value={null} />
+        <StatCard type="newPost" onClick={() => { setCurrentPage("EditPost") }} value={null} />
       </div>
       <div className="my-8">
         <h1 className="text-lg">Recent Posts</h1>
