@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import AnimatedGradientText from "@/components/ui/animated-gradient-text";
 import { useSelectedSite } from "@/contexts/SelectedSiteContext";
 import VariableFontHoverByLetter from "@/components/app_ui/font_hover";
+import { useSelectedPage } from "@/contexts/SelectedPageContext";
 
 const menu = [
 	{
@@ -39,11 +40,11 @@ const menu = [
 	},
 ];
 
-export function DriftSidebar({ className, setCurrentPage }: React.ComponentProps<typeof Sidebar> & {
+export function DriftSidebar({ className }: React.ComponentProps<typeof Sidebar> & {
 	className?: string,
-	setCurrentPage: (page: string) => void,
 }) {
 	const { sitesData, selectedSite, setSelectedSite } = useSelectedSite();
+  const { setSelectedPage, selectedPage } = useSelectedPage();
 
 	return (
 		<Sidebar>
@@ -85,7 +86,7 @@ export function DriftSidebar({ className, setCurrentPage }: React.ComponentProps
 						<SidebarMenu>
 							{menu.map((item) => (
 								<SidebarMenuItem key={item.title}>
-									<SidebarMenuButton className="h-full" asChild onClick={() => setCurrentPage(item.title)}>
+									<SidebarMenuButton className="h-full" asChild onClick={() => setSelectedPage(item.title)}>
 										<span className="grotesk text-xl">
 											<item.icon />
 											<VariableFontHoverByLetter
@@ -104,7 +105,7 @@ export function DriftSidebar({ className, setCurrentPage }: React.ComponentProps
 				</SidebarGroup>
 			</SidebarContent>
 			<SidebarFooter>
-				<Button variant="outline" onClick={() => setCurrentPage("Profile")}>
+				<Button variant="outline" onClick={() => setSelectedPage("Profile")}>
 					<User />
 					Profile
 				</Button>

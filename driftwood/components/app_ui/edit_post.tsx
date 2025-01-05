@@ -6,11 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { X, Upload, Edit } from "lucide-react";
+import { Edit } from "lucide-react";
 import  type { Post } from "@/types/post";
 import { useSelectedSite } from "@/contexts/SelectedSiteContext";
-import { invoke } from "@tauri-apps/api/core";
-import { type DriftResponse, processResponse } from "@/types/response";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -22,6 +20,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { invoke } from "@tauri-apps/api/core";
+import { type DriftResponse, processResponse } from "@/types/response";
 
 // Add schema at top of file
 const postFormSchema = z.object({
@@ -35,7 +35,7 @@ const postFormSchema = z.object({
 type PostFormValues = z.infer<typeof postFormSchema>;
 
 export default function PostEditor({ post }:{
-  post: Post,
+  post: Post | undefined,
 }) {
   const [title, setTitle] = useState(post?.title || '');
   const [tags, setTags] = useState(post?.tags || []);
@@ -87,23 +87,33 @@ export default function PostEditor({ post }:{
     setTags(updatedTags);
   };
 
-  const handleSubmit = async (post: PostFormValues) => {
-    console.log(post);
+  const handleSubmit = async (form_data: PostFormValues) => {
 
-		setTitle(post.title);
+    const new_post: Post = {
+      ...form_data,
+      post_id: post?.post_id ?? 0,
+      site_id: post?.site_id ?? "",
+      date: post?.date ?? "",
+      filename: post?.filename ?? "",
+      content: post?.content ?? "",
+    };
+
+    console.log(new_post);
+
+		setTitle(new_post.title);
 
     // TODO - on the backend, need to give this post a post_id before
     // attempting to serialize it, otherwise it will fail
 
-		// const response = await invoke<DriftResponse>("create_post", {
-		// 	postData: JSON.stringify(post),
-		// 	siteData: JSON.stringify(selectedSite),
-		// });
+		const response = await invoke<DriftResponse>("create_post", {
+			postData: JSON.stringify(new_post),
+			siteData: JSON.stringify(selectedSite),
+		});
 
-		// const result = processResponse(response);
+		const result = processResponse(response);
 
-		// if (result) alert("Post created successfully");
-		// else alert(response.message);
+		if (result) alert("Post created successfully");
+		else alert(response.message);
 
 	};
 

@@ -15,10 +15,11 @@ import BentoCard from "./BentoCard";
 interface StatCardProps {
   type: 'posts' | 'deploy' | 'visit' | 'newPost' | string;
   value: number | string | null;
+  colors: string[];
   onClick: () => void;
 }
 
-const StatCard = ({ type, value, onClick }: StatCardProps) => {
+const StatCard = ({ type, value, colors, onClick }: StatCardProps) => {
   const getCardContent = () => {
     switch (type) {
       case 'posts':
@@ -112,7 +113,7 @@ const StatCard = ({ type, value, onClick }: StatCardProps) => {
           title={content.label}
           value={content.value}
           icon={content.icon}
-          colors={["#3B82F6", "#60A5FA", "#93C5FD"]}
+          colors={colors}
           delay={0.2}
         />
       </Card>

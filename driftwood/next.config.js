@@ -9,7 +9,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  assetPrefix: isProd ? null : undefined, // Let Next.js handle the HMR URL
+  // assetPrefix: isProd ? null : undefined, // Let Next.js handle the HMR URL
 };
 
 module.exports = nextConfig;

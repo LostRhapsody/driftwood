@@ -6,21 +6,11 @@ use crate::response::{
     Response,
 };
 use crate::sites::SiteRepository;
-use serde::{Deserialize, Serialize};
 use std::path::Path;
 
 pub const RECENT_POST_LIMIT: i32 = 5;
 
 /// TODO in edit post screen, add field for image, tags, and create a way to extract an excerpt from the post's contents.
-
-// This is like the post struct from driftwood.rs, but
-// is strictly for serializing the json from the client.
-#[derive(Serialize, Deserialize, Debug)]
-struct PostData {
-    post_id: u64,
-    post_name: String,
-    post_text: String,
-}
 
 #[tauri::command]
 pub fn netlify_login() -> Response {
@@ -246,7 +236,7 @@ pub fn update_post(post_data: String, site_data: String) -> Response {
     let post_repo = PostRepository::new().expect("Failed to init post repository in create_post");
 
     // serialize the post_data into a JSON object for interactivity.
-    let post_data: PostData =
+    let post_data: Post =
         serde_json::from_str(&post_data).expect("Failed to serialize the post data in create_post");
 
     // serialize the site_data into a JSON object for interactivity.
@@ -255,9 +245,9 @@ pub fn update_post(post_data: String, site_data: String) -> Response {
 
     // create a new post
     // date is set automatically
-    let mut updated_post = Post::new(post_data.post_name);
+    let mut updated_post = Post::new(post_data.title);
     // manually set the content
-    updated_post.content = post_data.post_text;
+    updated_post.content = post_data.content;
     updated_post.post_id = post_data.post_id;
 
     // strip bad chars and set post.filename
@@ -292,18 +282,28 @@ pub fn create_post(post_data: String, site_data: String) -> Response {
     let post_repo = PostRepository::new().expect("Failed to init post repository in create_post");
 
     // serialize the post_data into a JSON object for interactivity.
-    let post_data: PostData =
-        serde_json::from_str(&post_data).expect("Failed to serialize the post data in create_post");
+    let post_data: Post = match serde_json::from_str(&post_data) {
+        Ok(data) => data,
+        Err(e) => {
+            println!("Failed to serialize post data in create_post: {}", e);
+            return Response::fail(format!("Failed to serialize post data in create_post: {}", e));
+        }
+    };
 
     // serialize the site_data into a JSON object for interactivity.
-    let site_data: SiteDetails =
-        serde_json::from_str(&site_data).expect("Failed to serialize site data in create_post");
+    let site_data: SiteDetails = match serde_json::from_str(&site_data) {
+        Ok(data) => data,
+        Err(e) => {
+            println!("Failed to serialize site data in create_post: {}", e);
+            return Response::fail(format!("Failed to serialize site data in create_post: {}", e));
+        }
+    };
 
     // create a new post
     // date is set automatically
-    let mut new_post = Post::new(post_data.post_name);
+    let mut new_post = Post::new(post_data.title);
     // manually set the content
-    new_post.content = post_data.post_text;
+    new_post.content = post_data.content;
 
     // strip bad chars and set post.filename
     let _ = new_post.clean_filename();

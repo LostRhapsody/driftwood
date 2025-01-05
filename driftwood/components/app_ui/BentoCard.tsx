@@ -37,7 +37,7 @@ const BentoCard: React.FC<BentoCardProps> = ({
 
   return (
     <motion.div
-      className="relative overflow-hidden h-full bg-white rounded-xl"
+      className="relative overflow-hidden h-full bg-white rounded-xl min-h-28 max-h-28"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5, delay }}
@@ -59,7 +59,7 @@ const BentoCard: React.FC<BentoCardProps> = ({
             <motion.p className="text-sm sm:text-base md:text-lg flex" variants={item}>
               {title}
             </motion.p>
-            {value && <motion.p className="text-2xl font-bold" variants={item}>{value}</motion.p>}
+            {value && (<motion.p className="text-2xl font-bold" variants={item}>{value}</motion.p>)}
           </motion.div>
         </motion.div>
       </motion.div>

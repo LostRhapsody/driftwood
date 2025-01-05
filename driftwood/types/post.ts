@@ -1,5 +1,5 @@
 export type Post = {
-	post_id: string;
+	post_id: number;
 	site_id: string;
 	title: string;
 	tags: string[];

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useSelectedSite } from "@/contexts/SelectedSiteContext";
+import { useSelectedPage } from "@/contexts/SelectedPageContext";
 import { invoke } from "@tauri-apps/api/core";
 import { type DriftResponse, processResponse } from "@/types/response";
 import StatCard from "@/components/app_ui/DashboardCard";
@@ -8,9 +9,8 @@ import { open } from "@tauri-apps/plugin-shell";
 import RecentPosts from "@/components/app_ui/post_grid";
 import type { Post } from "@/types/post";
 
-export default function dashboard({ setCurrentPage }:{
-	setCurrentPage: (page: string) => void,
-}) {
+export default function dashboard() {
+	const { setSelectedPage } = useSelectedPage();
   const { selectedSite } = useSelectedSite();
   const [postCount, setPostCount] = useState(0);
   const [deployUrl, setDeployUrl] = useState("");
@@ -66,17 +66,19 @@ export default function dashboard({ setCurrentPage }:{
   return (
     <div className="items-center justify-center">
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {deployUrl !== "" && <StatCard type="deployStat" onClick={() => { }} value={deployUrl} />}
-        <StatCard type="posts" onClick={() => { }} value={postCount} />
-        <StatCard type="visit" onClick={handleVisit} value={null} />
-        <StatCard type="deploySite" onClick={() => { }} value={null} />
-        <StatCard type="newPost" onClick={() => { setCurrentPage("EditPost") }} value={null} />
-      </div>
+      {deployUrl !== "" && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard colors={["#3B82F6", "#60A5FA", "#93C5FD"]} type="deployStat" onClick={() => { }} value={deployUrl} />
+          <StatCard colors={["#10B981", "#34D399", "#6EE7B7"]} type="posts" onClick={() => { }} value={postCount} />
+          <StatCard colors={["#8B5CF6", "#A78BFA", "#C4B5FD"]} type="visit" onClick={handleVisit} value={null} />
+          <StatCard colors={["#F59E0B", "#FBBF24", "#FCD34D"]} type="deploySite" onClick={() => { }} value={null} />
+          <StatCard colors={["#EC4899", "#F472B6", "#FBCFE8"]} type="newPost" onClick={() => setSelectedPage("EditPost")} value={null} />
+        </div>
+      )}
       <div className="my-8">
         <h1 className="text-lg">Recent Posts</h1>
         <hr className="mb-2" />
-        <RecentPosts posts={recentPosts} onEdit={() => {}} onDelete={() => {}} />
+        <RecentPosts posts={recentPosts} onEdit={() => { }} onDelete={() => { }} />
       </div>
     </div>
   );
