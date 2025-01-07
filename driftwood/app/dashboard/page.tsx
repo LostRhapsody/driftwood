@@ -72,13 +72,13 @@ export default function dashboard() {
           <StatCard colors={["#10B981", "#34D399", "#6EE7B7"]} type="posts" onClick={() => { }} value={postCount} />
           <StatCard colors={["#8B5CF6", "#A78BFA", "#C4B5FD"]} type="visit" onClick={handleVisit} value={null} />
           <StatCard colors={["#F59E0B", "#FBBF24", "#FCD34D"]} type="deploySite" onClick={() => { }} value={null} />
-          <StatCard colors={["#EC4899", "#F472B6", "#FBCFE8"]} type="newPost" onClick={() => setSelectedPage("EditPost")} value={null} />
+          <StatCard colors={["#EC4899", "#F472B6", "#FBCFE8"]} type="newPost" onClick={() => setSelectedPage("Create Post")} value={null} />
         </div>
       )}
       <div className="my-8">
         <h1 className="text-lg">Recent Posts</h1>
         <hr className="mb-2" />
-        <RecentPosts posts={recentPosts} onEdit={() => { }} onDelete={() => { }} />
+        <RecentPosts posts={recentPosts} />
       </div>
     </div>
   );

@@ -7,20 +7,27 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, } from "lucide-react";
 import type { Post } from "@/types/post";
+import { useSelectedPage } from "@/contexts/SelectedPageContext";
+import { useSelectedPost } from "@/contexts/SelectedPostContext";
+import { useCallback } from 'react';
 
 interface RecentPostsProps {
   posts: Post[];
-  onEdit: (post: Post) => void;
-  onDelete: (post: Post) => void;
 }
 
 export default function RecentPosts({
   posts,
-  onEdit,
-  onDelete
 }: RecentPostsProps) {
+  const { setSelectedPage } = useSelectedPage();
+  const { setSelectedPost } = useSelectedPost();
+
+  const handleEditClick = useCallback(() => {
+    setSelectedPage("Edit Post");
+  }, [setSelectedPage]);
+
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -51,19 +58,23 @@ export default function RecentPosts({
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => onEdit(post)}
+                    onClick={() => {
+                      setSelectedPost(post);
+                      handleEditClick();
+                    }}
                     className="h-8 w-8 p-0"
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
-                  <Button
+                  {/* Don't think we want a quick-delete button here */}
+                  {/* <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => onDelete(post)}
                     className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100"
                   >
                     <Trash2 className="h-4 w-4" />
-                  </Button>
+                  </Button> */}
                 </div>
               </TableCell>
             </TableRow>

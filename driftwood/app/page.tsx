@@ -4,6 +4,7 @@ import Posts from "./posts/page";
 import Profile from "./profile/page";
 import Settings from "./settings/page";
 import EditPost from "@/components/app_ui/edit_post";
+import CreatePost from "@/components/app_ui/create_post";
 import { DriftSidebar } from "@/components/app_ui/sidebar"
 import { useSelectedPage } from "@/contexts/SelectedPageContext";
 
@@ -20,7 +21,8 @@ export default function page() {
         <hr className="mb-2" />
         {selectedPage === "Dashboard" && <Dashboard />}
         {selectedPage === "Posts" && <Posts />}
-        {selectedPage === "EditPost" && <EditPost post={undefined} />}
+        {selectedPage === "Edit Post" && <EditPost />}
+        {selectedPage === "Create Post" && <CreatePost />}
         {selectedPage === "Profile" && <Profile />}
         {selectedPage === "Settings" && <Settings />}
       </main>

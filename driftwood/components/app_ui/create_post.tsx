@@ -1,3 +1,4 @@
+// Copy of edit post but for creating a new post
 "use client";
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Edit } from "lucide-react";
-import  type { Post } from "@/types/post";
+import type { Post } from "@/types/post";
 import { useSelectedSite } from "@/contexts/SelectedSiteContext";
 import { useSelectedPost } from "@/contexts/SelectedPostContext";
 import { useSelectedPage } from "@/contexts/SelectedPageContext";
@@ -36,9 +37,10 @@ const postFormSchema = z.object({
 
 type PostFormValues = z.infer<typeof postFormSchema>;
 
-export default function EditPost() {
+export default function CreatePost() {
   const { selectedPost, setSelectedPost } = useSelectedPost();
-  const { setSelectedPage } = useSelectedPage();
+  // Clear selected post when component is mounted, clears stale data
+  setSelectedPost(null);
 
   const [title, setTitle] = useState(selectedPost?.title || '');
   const [tags, setTags] = useState(selectedPost?.tags || []);
@@ -46,10 +48,12 @@ export default function EditPost() {
   const [image, setImage] = useState(selectedPost?.image || '');
   const [excerpt, setExcerpt] = useState(selectedPost?.excerpt || '');
   const [published, setPublished] = useState(selectedPost?.published || false);
+  const [isValidUrl, setIsValidUrl] = useState(false);
   const { selectedSite } = useSelectedSite();
+  const { setSelectedPage } = useSelectedPage();
 
-   // Set up form
-   const form = useForm<PostFormValues>({
+  // Set up form
+  const form = useForm<PostFormValues>({
     resolver: zodResolver(postFormSchema),
     defaultValues: {
       title: selectedPost?.title || '',
@@ -67,9 +71,23 @@ export default function EditPost() {
 
   const watchImage = form.watch('image');
 
-  // Add useEffect to sync form with local state
   useEffect(() => {
-    setImage(watchImage);
+    const checkUrl = async (url: string) => {
+      try {
+        const response = await fetch(url, { method: 'HEAD' });
+        console.log(response);
+        setIsValidUrl(response.ok);
+      } catch (error) {
+        setIsValidUrl(false);
+      }
+    };
+
+    console.log(watchImage);
+    if (watchImage) {
+      checkUrl(watchImage);
+    } else {
+      setIsValidUrl(false);
+    }
   }, [watchImage]);
 
   const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -92,6 +110,14 @@ export default function EditPost() {
 
   const handleSubmit = async (form_data: PostFormValues) => {
 
+    // if image URL has been set and is not valid, alert the user
+    console.log(isValidUrl);
+    console.log(image);
+    if(!isValidUrl && image !== "") {
+      alert("The image URL is not valid, please check it and try again.");
+      return;
+    }
+
     const new_post: Post = {
       ...form_data,
       post_id: selectedPost?.post_id ?? 0,
@@ -101,31 +127,32 @@ export default function EditPost() {
       content: selectedPost?.content ?? "",
     };
 
-    setSelectedPost(new_post);
-
     console.log(new_post);
 
     // TODO - on the backend, need to give this post a post_id before
     // attempting to serialize it, otherwise it will fail
 
-		const response = await invoke<DriftResponse>("create_post", {
-			postData: JSON.stringify(new_post),
-			siteData: JSON.stringify(selectedSite),
-		});
+    const response = await invoke<DriftResponse>("create_post", {
+      postData: JSON.stringify(new_post),
+      siteData: JSON.stringify(selectedSite),
+    });
 
-		const result = processResponse(response);
+    const result = processResponse(response);
 
-		if (result) alert("Post created successfully");
-		else alert(response.message);
+    if (result) {
+      alert("Post created successfully");
+      setSelectedPage("Edit Post");
+      setSelectedPost(new_post);
+    } else alert(response.message);
 
-	};
+  };
 
   return (
     <div className="grid lg:grid-cols-2 gap-6">
       {/* Left Panel - Metadata */}
       <Card>
         <CardContent className="space-y-6 pt-6">
-        <Form {...form}>
+          <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
@@ -135,12 +162,12 @@ export default function EditPost() {
                     <FormLabel>Title</FormLabel>
                     <FormControl>
                       <Input
-                      {...field}
-                      onChange={(e) => {
-                        field.onChange(e);
-                        setTitle(e.target.value);
-                      }}
-                      value={field.value}
+                        {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          setTitle(e.target.value);
+                        }}
+                        value={field.value}
                       />
                     </FormControl>
                     <FormMessage />
@@ -155,7 +182,13 @@ export default function EditPost() {
                   <FormItem>
                     <FormLabel>Excerpt</FormLabel>
                     <FormControl>
-                      <Textarea {...field} />
+                      <Textarea
+                        {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          setExcerpt(e.target.value);
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -220,8 +253,7 @@ export default function EditPost() {
                 </div>
               </div>
 
-              <Button type="submit">Save Post</Button>
-              <Button onClick={() => {setSelectedPage("Dashboard")}}>Back to Dashboard</Button>
+              <Button type="submit">Create Post</Button>
             </form>
           </Form>
         </CardContent>

@@ -4,6 +4,7 @@ import "./globals.css";
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { SelectedSiteProvider } from "@/contexts/SelectedSiteContext";
 import { SelectedPageProvider } from "@/contexts/SelectedPageContext";
+import { SelectedPostProvider } from "@/contexts/SelectedPostContext";
 import '@mdxeditor/editor/style.css'
 
 const geistSans = localFont({
@@ -34,9 +35,11 @@ export default function RootLayout({
       >
         <SelectedSiteProvider>
           <SelectedPageProvider>
+          <SelectedPostProvider>
             <SidebarProvider>
               {children}
             </SidebarProvider>
+          </SelectedPostProvider>
           </SelectedPageProvider>
         </SelectedSiteProvider>
       </body>
