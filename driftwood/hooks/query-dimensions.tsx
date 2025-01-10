@@ -1,3 +1,4 @@
+"use client";
 import { useState, useEffect, type RefObject } from 'react';
 
 interface Dimensions {

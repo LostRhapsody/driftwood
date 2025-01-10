@@ -229,19 +229,34 @@ pub fn list_sites() -> Response {
 /// Nearly identical to create_post but updates an existing record instead of inserting a new one
 #[tauri::command]
 pub fn update_post(post_data: String, site_data: String) -> Response {
-    println!("Update post, post data: {}", post_data);
+    println!("Update post, post data 1: {}", post_data);
     println!("Update post, site data: {}", site_data);
 
     // init repo to save post in DB
     let post_repo = PostRepository::new().expect("Failed to init post repository in create_post");
 
     // serialize the post_data into a JSON object for interactivity.
-    let post_data: Post =
-        serde_json::from_str(&post_data).expect("Failed to serialize the post data in create_post");
+    let post_data: Post = match serde_json::from_str(&post_data) {
+        Ok(data) => data,
+        Err(e) => {
+            println!("Failed to serialize the post data in create_post: {}", e);
+            return Response::fail(format!(
+                "Failed to serialize the post data in create_post: {}",
+                e
+            ));
+        }
+    };
 
     // serialize the site_data into a JSON object for interactivity.
-    let site_data: SiteDetails =
-        serde_json::from_str(&site_data).expect("Failed to serialize site data in create_post");
+    let site_data: SiteDetails = match serde_json::from_str(&site_data) {
+        Ok(data) => data,
+        Err(e) => {
+            return Response::fail(format!(
+                "Failed to serialize site data in create_post: {}",
+                e
+            ))
+        }
+    };
 
     // create a new post
     // date is set automatically
@@ -286,7 +301,10 @@ pub fn create_post(post_data: String, site_data: String) -> Response {
         Ok(data) => data,
         Err(e) => {
             println!("Failed to serialize post data in create_post: {}", e);
-            return Response::fail(format!("Failed to serialize post data in create_post: {}", e));
+            return Response::fail(format!(
+                "Failed to serialize post data in create_post: {}",
+                e
+            ));
         }
     };
 
@@ -295,7 +313,10 @@ pub fn create_post(post_data: String, site_data: String) -> Response {
         Ok(data) => data,
         Err(e) => {
             println!("Failed to serialize site data in create_post: {}", e);
-            return Response::fail(format!("Failed to serialize site data in create_post: {}", e));
+            return Response::fail(format!(
+                "Failed to serialize site data in create_post: {}",
+                e
+            ));
         }
     };
 
@@ -575,11 +596,12 @@ pub fn delete_post(site_id: String, post_name: String) -> Response {
 
 #[tauri::command]
 pub fn get_post_count(site_id: &str) -> Response {
-
     println!("Getting number of posts for site {} ", site_id);
 
     let post_repo = PostRepository::new().expect("Failed to init post repository in create_post");
-    let count = post_repo.get_post_count(site_id).expect("Failed to get number of posts");
+    let count = post_repo
+        .get_post_count(site_id)
+        .expect("Failed to get number of posts");
 
     let mut response = Response::success(format!("Found {} posts", count));
     response.body = Some(serde_json::json!(count));

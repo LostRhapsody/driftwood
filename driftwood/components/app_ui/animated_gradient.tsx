@@ -1,3 +1,4 @@
+"use client";
 import { useDimensions } from "@/hooks/query-dimensions";
 import { cn } from "@/lib/utils";
 import type React from "react";
