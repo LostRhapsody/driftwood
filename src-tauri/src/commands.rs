@@ -233,15 +233,15 @@ pub fn update_post(post_data: String, site_data: String) -> Response {
     println!("Update post, site data: {}", site_data);
 
     // init repo to save post in DB
-    let post_repo = PostRepository::new().expect("Failed to init post repository in create_post");
+    let post_repo = PostRepository::new().expect("Failed to init post repository in update_post");
 
     // serialize the post_data into a JSON object for interactivity.
     let post_data: Post = match serde_json::from_str(&post_data) {
         Ok(data) => data,
         Err(e) => {
-            println!("Failed to serialize the post data in create_post: {}", e);
+            println!("Failed to serialize the post data in update_post: {}", e);
             return Response::fail(format!(
-                "Failed to serialize the post data in create_post: {}",
+                "Failed to serialize the post data in update_post: {}",
                 e
             ));
         }
@@ -252,7 +252,7 @@ pub fn update_post(post_data: String, site_data: String) -> Response {
         Ok(data) => data,
         Err(e) => {
             return Response::fail(format!(
-                "Failed to serialize site data in create_post: {}",
+                "Failed to serialize site data in update_post: {}",
                 e
             ))
         }
@@ -275,7 +275,7 @@ pub fn update_post(post_data: String, site_data: String) -> Response {
         &updated_post,
         &site_data
             .id
-            .expect("Failed to retrieve site id in create_post"),
+            .expect("Failed to retrieve site id in update_post"),
     ) {
         Ok(()) => {
             println!("Post updated in DB");
@@ -367,10 +367,9 @@ pub fn get_post_details(post_id: u64, site_id: String) -> Response {
     );
 
     // init repo to save post in DB
-    let post_repo = PostRepository::new().expect("Failed to init post repository in create_post");
+    let post_repo = PostRepository::new().expect("Failed to init post repository in get_post_details");
     let post = post_repo.read(&site_id, post_id);
 
-    // let post = post.read_post_from_disk(site_id);
     match post {
         Ok(post) => {
             let mut response = Response::success(String::from("Read post from database"));
@@ -398,10 +397,9 @@ pub fn get_recent_posts(site_id: String) -> Response {
     println!("Running get recent posts for site: {}", site_id);
 
     // init repo to save post in DB
-    let post_repo = PostRepository::new().expect("Failed to init post repository in create_post");
+    let post_repo = PostRepository::new().expect("Failed to init post repository in get_recent_posts");
     let post = post_repo.get_recent_posts(&site_id, RECENT_POST_LIMIT);
 
-    // let post = post.read_post_from_disk(site_id);
     match post {
         Ok(post) => {
             let mut response = Response::success(String::from("Read posts from database"));
@@ -429,7 +427,7 @@ pub fn deploy_site(site_id: String) -> Response {
 
             // retrieve all the posts
             let post_repo =
-                PostRepository::new().expect("Failed to init post repository in create_post");
+                PostRepository::new().expect("Failed to init post repository in deploy_site");
             let posts = post_repo.list_all(&site_id);
 
             // get posts out of the result
@@ -552,7 +550,7 @@ pub fn deploy_site(site_id: String) -> Response {
 
 #[tauri::command]
 pub fn get_post_list(site_id: &str) -> Response {
-    let post_repo = PostRepository::new().expect("Failed to init post repository in create_post");
+    let post_repo = PostRepository::new().expect("Failed to init post repository in get_post_list");
     let posts = post_repo.list_all(site_id);
 
     match posts {
@@ -598,7 +596,7 @@ pub fn delete_post(site_id: String, post_name: String) -> Response {
 pub fn get_post_count(site_id: &str) -> Response {
     println!("Getting number of posts for site {} ", site_id);
 
-    let post_repo = PostRepository::new().expect("Failed to init post repository in create_post");
+    let post_repo = PostRepository::new().expect("Failed to init post repository in get_post_count");
     let count = post_repo
         .get_post_count(site_id)
         .expect("Failed to get number of posts");

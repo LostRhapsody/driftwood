@@ -9,7 +9,8 @@ import {
   Settings,
   LayoutDashboard,
   Activity,
-  Terminal
+  Terminal,
+  ChevronRight,
 } from "lucide-react";
 import BentoCard from "./BentoCard";
 
@@ -41,21 +42,21 @@ const StatCard = ({ type, value, colors, onClick }: StatCardProps) => {
         return {
           icon: <Globe className="h-6 w-6" />,
           label: 'Visit Site',
-          value: null,
+          value: <ChevronRight className="h-6 w-6" />,
           action: 'Visit'
         };
       case 'newPost':
         return {
           icon: <PencilLine className="h-6 w-6" />,
           label: 'Create Post',
-          value: null,
+          value: <ChevronRight className="h-6 w-6" />,
           action: 'New Post'
         };
       case 'deploySite':
         return {
           icon: <Rocket className="h-6 w-6" />,
           label: 'Deploy Site',
-          value: null,
+          value: <ChevronRight className="h-6 w-6" />,
           action: 'Deploy'
         };
       case 'quickActions':

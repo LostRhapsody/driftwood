@@ -23,7 +23,7 @@ impl PostRepository {
 
     pub fn read(&self, site_id: &str, post_id: u64) -> Result<Option<Post>> {
         let mut stmt = self.conn.prepare(
-            "SELECT title, header_image, date, content, post_id, site_id FROM posts WHERE site_id = ?1 AND post_id = ?2"
+            "SELECT title, header_image, date, content, post_id, site_id, excerpt FROM posts WHERE site_id = ?1 AND post_id = ?2"
         )?;
 
         stmt.query_row(params![site_id, post_id], |row| {
@@ -36,6 +36,7 @@ impl PostRepository {
                 filename: String::new(), // Generate from title when needed
                 post_id: row.get(4)?,
                 site_id: row.get(5)?,
+                excerpt: row.get(6)?,
             })
         })
         .optional()
@@ -61,7 +62,7 @@ impl PostRepository {
 
     pub fn list_all(&self, site_id: &str) -> Result<Vec<Post>> {
         let mut stmt = self.conn.prepare(
-            "SELECT title, header_image, date, content, post_id, site_id FROM posts WHERE site_id = ?1"
+            "SELECT title, header_image, date, content, post_id, site_id, excerpt FROM posts WHERE site_id = ?1"
         )?;
 
         let posts_iter = stmt.query_map(params![site_id], |row| {
@@ -74,6 +75,7 @@ impl PostRepository {
                 filename: String::new(), // Generate from title when needed
                 post_id: row.get(4)?, // post Id and site Id don't matter here, won't be getting this
                 site_id: row.get(5)?, // shit from disk anymore
+                excerpt: row.get(6)?,
             })
         })?;
 
@@ -87,7 +89,7 @@ impl PostRepository {
 
     pub fn get_recent_posts(&self, site_id: &str, limit: i32) -> Result<Vec<Post>> {
         let mut stmt = self.conn.prepare(
-            "SELECT title, date, content, header_image, post_id, site_id
+            "SELECT title, date, content, header_image, post_id, site_id, excerpt
              FROM posts
              WHERE site_id = ?1
              ORDER BY date DESC
@@ -104,6 +106,7 @@ impl PostRepository {
                 filename: String::new(),
                 post_id: row.get(4)?, // post Id and site Id don't matter here, won't be getting this
                 site_id: row.get(5)?, // shit from disk anymore
+                excerpt: row.get(6)?,
             })
         })?;
 

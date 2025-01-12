@@ -39,8 +39,6 @@ type PostFormValues = z.infer<typeof postFormSchema>;
 
 export default function CreatePost() {
   const { selectedPost, setSelectedPost } = useSelectedPost();
-  // Clear selected post when component is mounted, clears stale data
-  setSelectedPost(null);
 
   const [title, setTitle] = useState(selectedPost?.title || '');
   const [tags, setTags] = useState(selectedPost?.tags || []);
@@ -111,9 +109,7 @@ export default function CreatePost() {
   const handleSubmit = async (form_data: PostFormValues) => {
 
     // if image URL has been set and is not valid, alert the user
-    console.log(isValidUrl);
-    console.log(image);
-    if(!isValidUrl && image !== "") {
+    if (!isValidUrl && image !== "") {
       alert("The image URL is not valid, please check it and try again.");
       return;
     }
@@ -128,9 +124,7 @@ export default function CreatePost() {
     };
 
     console.log(new_post);
-
-    // TODO - on the backend, need to give this post a post_id before
-    // attempting to serialize it, otherwise it will fail
+    console.log(selectedSite);
 
     const response = await invoke<DriftResponse>("create_post", {
       postData: JSON.stringify(new_post),
@@ -254,6 +248,10 @@ export default function CreatePost() {
               </div>
 
               <Button type="submit">Create Post</Button>
+              <Button onClick={() => {
+                setSelectedPage("Dashboard")
+                setSelectedPost(null)
+              }}>Back to Dashboard</Button>
             </form>
           </Form>
         </CardContent>

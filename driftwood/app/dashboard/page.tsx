@@ -15,6 +15,7 @@ export default function dashboard() {
   const [postCount, setPostCount] = useState(0);
   const [deployUrl, setDeployUrl] = useState("");
   const [recentPosts, setRecentPosts] = useState<Post[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   const handleVisit = async () => {
     if (selectedSite?.url) {
@@ -28,6 +29,11 @@ export default function dashboard() {
       alert("Not implemented");
     }
   }
+
+  // things that happen just once on page load
+  useEffect(() => {
+    setIsLoaded(true);
+  }, []);
 
   // things that happen every time the site is changed
   useEffect(() => {
@@ -66,7 +72,7 @@ export default function dashboard() {
   return (
     <div className="items-center justify-center">
 
-      {deployUrl !== "" && (
+      {isLoaded ?
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard colors={["#3B82F6", "#60A5FA", "#93C5FD"]} type="deployStat" onClick={() => { }} value={deployUrl} />
           <StatCard colors={["#10B981", "#34D399", "#6EE7B7"]} type="posts" onClick={() => { }} value={postCount} />
@@ -74,7 +80,10 @@ export default function dashboard() {
           <StatCard colors={["#F59E0B", "#FBBF24", "#FCD34D"]} type="deploySite" onClick={() => { }} value={null} />
           <StatCard colors={["#EC4899", "#F472B6", "#FBCFE8"]} type="newPost" onClick={() => setSelectedPage("Create Post")} value={null} />
         </div>
-      )}
+      :
+        <p>Loading...</p>
+      }
+
       <div className="my-8">
         <h1 className="text-lg">Recent Posts</h1>
         <hr className="mb-2" />

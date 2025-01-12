@@ -21,6 +21,7 @@ pub struct Post {
     pub tags: Vec<String>,
     pub post_id: u64,
     pub site_id: String,
+    pub excerpt: String,
 }
 
 #[derive(Serialize)]
@@ -107,6 +108,7 @@ impl Post {
             image: None,
             post_id: 0,
             site_id: String::new(),
+            excerpt: String::new(),
         }
     }
 
@@ -250,84 +252,6 @@ impl Post {
         );
 
         Ok(())
-    }
-
-    /// Reads in a post file and returns the Post
-    pub fn read_post_from_disk(&mut self, site_id: String) -> Result<Post> {
-        println!("Reading post from disk");
-        println!("Post name: {}", self.title);
-        // At this point, we've probably only set the Post's title, so 'create' the filename
-        // and set it as well
-        _ = self.clean_filename();
-        println!("Post filename: {}", self.filename);
-
-        // Creating a mostly empty SiteDetails instance, we only need the id for build_post_path.
-        let site_details = SiteDetails {
-            name: None,
-            domain: None,
-            id: Some(site_id),
-            ssl: None,
-            url: None,
-            screenshot_url: None,
-            password: None,
-            required: None,
-            favicon_path: None,
-            favicon: None,
-        };
-
-        let post_path = self.build_post_path(&site_details)?;
-
-        println!("post_path: {}", post_path.display());
-
-        // Read file content
-        let content = fs::read_to_string(&post_path).context("Failed to read post file")?;
-
-        // Parse metadata and content
-        let mut title: String = String::new();
-        let mut date = String::new();
-        let mut tags = Vec::new();
-        let mut image = None;
-        let mut _excerpt = String::new();
-        let mut post_content = Vec::new();
-
-        for line in content.lines() {
-            if line.starts_with("title:") {
-                title = line.replace("title:", "").trim().to_string();
-            } else if line.starts_with("date:") {
-                date = line.replace("date:", "").trim().to_string();
-            } else if line.starts_with("tags:") {
-                tags = line
-                    .replace("tags:", "")
-                    .trim()
-                    .split(',')
-                    .map(|s| s.trim().to_string())
-                    .collect();
-            } else if line.starts_with("image:") {
-                image = Some(line.replace("image:", "").trim().to_string());
-            } else if line.starts_with("excerpt:") {
-                _excerpt = line.replace("excerpt:", "").trim().to_string();
-            } else {
-                post_content.push(line);
-            }
-        }
-
-        // Join content lines with proper newlines
-        let content = post_content.join("\n");
-
-        let post = Post {
-            title,
-            date,
-            content,
-            filename: self.filename.clone(),
-            image,
-            tags,
-            post_id: 0, // post Id and site Id don't matter here, won't be getting this
-            site_id: String::new(), // shit from disk anymore
-        };
-
-        println!("Post data: {:?}", post);
-
-        Ok(post)
     }
 
     pub fn commit_post_to_repo(site: &SiteDetails, message: &str) -> Result<()> {
